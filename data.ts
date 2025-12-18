@@ -329,7 +329,7 @@ export const ALUMNI_MEMBERS: AlumniMember[] = [
   },
   {
     id: 3,
-    name: "Shaswat Shrivastav",
+    name: "Shashwat Srivastava",
     batch: "2022",
     image: "https://picsum.photos/400/400?random=3"
   },
@@ -353,7 +353,7 @@ export const ALUMNI_MEMBERS: AlumniMember[] = [
   },
   {
     id: 7,
-    name: "Parth",
+    name: "Parth Kumar",
     batch: "2022",
     image: "https://picsum.photos/400/400?random=7"
   },
@@ -389,7 +389,7 @@ export const ALUMNI_MEMBERS: AlumniMember[] = [
   },
   {
     id: 13,
-    name: "Tripti",
+    name: "Tripti Kumari",
     batch: "2022",
     image: "https://picsum.photos/400/400?random=13"
   }
@@ -400,8 +400,8 @@ export const EVENTS: EventItem[] = [
    {
     id: 1,
     title: "INgeniEUX 2.0",
-    date: "Upcoming Soon",
-    category: "Hackathon",
+    date: "Coming Soon",
+    category: "Tech Event",
     description: "Our flagship Tech Event.",
     image: "https://picsum.photos/800/600?random=133"
   },
@@ -409,8 +409,8 @@ export const EVENTS: EventItem[] = [
     id: 1,
     title: "Xordium 4.0",
     date: "Nov 5th - Nov 9th, 2025",
-    category: "Hackathon",
-    description: "Our flagship Tech Event.",
+    category: "Annual Tech+Fun Event",
+    description: "Our Annual flagship Tech+Fun Event.",
     image: "https://picsum.photos/800/600?random=10"
   },
   {
