@@ -4,163 +4,162 @@ export const TEAM_MEMBERS: TeamMember[] = [
     id: 1,
     name: "Kishlaya Sinha",
     role: "President",
-    image: "Photograph\\Kishlaya Sinha - KISHLAYA SINHA.jpg",
+    image: "Public\\Photograph\\Kishlaya Sinha - KISHLAYA SINHA.jpg",
     socials: { linkedin: "https://www.linkedin.com/in/kishlaya-sinha-9134a0211?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" }
   },
   {
     id: 2,
     name: "Aditya Agarwal",
     role: "Vice President",
-    image: "Photograph\\917aa01f-9ef0-4275-8303-2acc78f6fb6a - Aditya Agarwal.jpeg",
+    image: "Public\\Photograph\\917aa01f-9ef0-4275-8303-2acc78f6fb6a - Aditya Agarwal.jpeg",
     socials: { linkedin: "https://www.linkedin.com/in/aditya2227?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" }
   },
   {
     id: 3,
     name: "Saumya Kumari",
     role: "Vice President",
-    image: "Photograph\\saumya.jpg",
+    image: "Public\\Photograph\\saumya.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 4,
     name: "Vishal Kumar Singh",
     role: "Secretary",
-    image: "Photograph\\IMG-20231231-WA0034 - vishal.jpg",
+    image: "Public\\Photograph\\IMG-20231231-WA0034 - vishal.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 5,
     name: "Shivam",
     role: "Treasurer",
-    image: "Photograph\\IMG-20250927-WA0002 - Shivam Lal.jpg",
+    image: "Public\\Photograph\\IMG-20250927-WA0002 - Shivam Lal.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 6,
     name: "Prem Kumar Singh",
     role: "Event Head",
-    image: "Photograph\\IMG_20251112_124705 - Prem Kumar Singh.jpg",
+    image: "Public\\Photograph\\IMG_20251112_124705 - Prem Kumar Singh.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 7,
     name: "Priyanka Agrawal",
     role: "Event Lead",
-    image: "Photograph\\Img - Kishlaya Sinha.jpg",
+    image: "Public\\Photograph\\Img - Kishlaya Sinha.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 8,
     name: "Abhishek Anand",
     role: "Event Lead",
-    image: "Photograph\\IMG_1650 - Abhishek Anand.jpeg",
+    image: "Public\\Photograph\\IMG_1650 - Abhishek Anand.jpeg",
     socials: { linkedin: "#" }
   },
   {
     id: 9,
     name: "Kalpana",
     role: "Design Head",
-    image: "Photograph\\IMG-20241029-WA0084 - Only Imagination.jpg",
+    image: "Public\\Photograph\\IMG-20241029-WA0084 - Only Imagination.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 10,
     name: "Shalini Shalu",
     role: "Design Lead",
-    image: "Photograph\\IMG-20241202-WA0057 - shalini shalu.jpg",
+    image: "Public\\Photograph\\IMG-20241202-WA0057 - shalini shalu.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 11,
     name: "Niharika Soni",
     role: "Design Lead",
-    image: "Photograph\\IMG-20250904-WA0205 - Niharik Soni.jpg",
+    image: "Public\\Photograph\\IMG-20250904-WA0205 - Niharik Soni.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 12,
     name: "Gargi Priya",
     role: "Webmaster",
-    image: "Photograph\\IMG_20250924_174640~2 - Gargi.jpg",
+    image: "Public\\Photograph\\IMG_20250924_174640~2 - Gargi.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 13,
     name: "Pratik Raj",
     role: "Resource Head",
-    image: "Photograph\\IMG_20250902_211105_593 - Pratik Raj.webp",
+    image: "Public\\Photograph\\IMG_20250902_211105_593 - Pratik Raj.webp",
     socials: { linkedin: "#" }
   },
   {
     id: 14,
     name: "Rohit Gupta",
     role: "Resource Lead",
-    image: "Photograph\\IMG_20251206_143509 - Rohit Gupta.jpg",
+    image: "Public\\Photograph\\IMG_20251206_143509 - Rohit Gupta.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 15,
     name: "Prince Chaturvedi",
     role: "Resource Lead",
-    image: "Photograph\\IMG_0280 - Prince Chaturvedi.jpeg",
+    image: "Public\\Photograph\\IMG_0280 - Prince Chaturvedi.jpeg",
     socials: { linkedin: "#" }
   },
   {
     id: 16,
     name: "Bhavini Awasthi",
     role: "Finance Head",
-    image: "Photograph\\BhaviniAwasthi - Bhavini Awasthi.jpg",
+    image: "Public\\Photograph\\BhaviniAwasthi - Bhavini Awasthi.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 17,
     name: "Tushan Jyoti",
     role: "Finance Lead",
-    image: "Photograph\\Photo - Technology Buster_s.jpg",
+    image: "Public\\Photograph\\Photo - Technology Buster_s.jpg",
     socials: { linkedin: "#" }
   },
 
-  // Added at the end as requested
   {
     id: 18,
     name: "Shayan Ahmad Khan",
     role: "PR Head",
-    image: "Photograph\\IMG-20251211-WA0028 - Shayan Ahmad Khan.jpg",
+    image: "Public\\Photograph\\IMG-20251211-WA0028 - Shayan Ahmad Khan.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 19,
     name: "Arfa Khanam",
     role: "PR Lead",
-    image: "Photograph\\IMG_20251211_183237 - arfa Khanam.jpg",
+    image: "Public\\Photograph\\IMG_20251211_183237 - arfa Khanam.jpg",
     socials: { linkedin: "#" }
   },
   {
   id: 26,
   name: "Anjali Kumari",
   role: "Member",
-  image: "Photograph\\Anjali.jpg",
+  image: "Public\\Photograph\\Anjali.jpg",
   socials: { linkedin: "#" }
 },
  {
   id: 43,
   name: "Ashutosh Kumar",
   role: "Member",
-  image: "Photograph\\ashutosh.jpg",
+  image: "Public\\Photograph\\ashutosh.jpg",
   socials: { linkedin: "#" }
 },
  {
   id: 27,
   name: "Raj Yash Gupta",
   role: "Member",
-  image: "Photograph\\DSC_0018 - RAJ YASH GUPTA.JPG",
+  image: "Public\\Photograph\\DSC_0018 - RAJ YASH GUPTA.JPG",
   socials: { linkedin: "#" }
 },
 {
   id: 21,
   name: "Ram Kishan Mehta",
   role: "Member",
-  image: "Photograph\\IMG_20251012_145245 - RamKishan Mehta.jpg",
+  image: "Public\\Photograph\\IMG_20251012_145245 - RamKishan Mehta.jpg",
   socials: { linkedin: "#" }
 },
 
