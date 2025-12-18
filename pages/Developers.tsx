@@ -7,14 +7,14 @@ const developers = [
   {
     name: "Aditya Agarwal",
     role: "Full Stack Developer",
-    image: "Photograph/917aa01f-9ef0-4275-8303-2acc78f6fb6a - Aditya Agarwal.jpeg",
+    image: "/Photograph/917aa01f-9ef0-4275-8303-2acc78f6fb6a - Aditya Agarwal.jpeg",
     socials: { linkedin: "https://www.linkedin.com/in/aditya2227?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" },
     skills: ["React", "Node.js", "DSA"],
   },
   {
     name: "Kishlaya Sinha",
     role: "Frontend Engineer",
-    image: "Photograph/Kishlaya Sinha - KISHLAYA SINHA.jpg",
+    image: "/Photograph/Kishlaya Sinha - KISHLAYA SINHA.jpg",
     socials: { linkedin: "https://www.linkedin.com/in/kishlaya-sinha-9134a0211?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" },
     skills: ["UI/UX", "AI/ML", "React"],
   },
@@ -58,7 +58,7 @@ const Developers: React.FC = () => {
                   <div className="w-32 h-32 mb-6 rounded-full p-[2px] bg-gradient-to-br from-primary to-purple-600">
                     <div className="w-full h-full rounded-full overflow-hidden bg-neutral-900">
                       <img
-                        src={dev.image}
+                        src={encodeURI(dev.image)}
                         alt={dev.name}
                         draggable={false}
                         className="

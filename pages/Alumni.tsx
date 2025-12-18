@@ -120,7 +120,7 @@ const Alumni: React.FC = () => {
                       >
                         <div className="flex items-center p-6 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-colors">
                           <img
-                            src={alum.image}
+                            src={encodeURI(alum.image)}
                             alt={alum.name}
                             className="w-20 h-20 rounded-full object-cover mr-5 border-2 border-primary/50"
                           />

@@ -25,7 +25,7 @@ const Events: React.FC = () => {
                 {/* Image */}
                 <div className="md:col-span-4 h-64 md:h-auto overflow-hidden">
                   <img 
-                    src={event.image} 
+                    src={encodeURI(event.image)} 
                     alt={event.title} 
                     className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
                   />

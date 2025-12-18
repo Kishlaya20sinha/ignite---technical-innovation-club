@@ -13,7 +13,7 @@ const TeamCard: React.FC<{ member: TeamMember }> = ({ member }) => {
       <div className="relative bg-dark-paper border border-white/5 rounded-2xl overflow-hidden h-full flex flex-col">
         <div className="aspect-square overflow-hidden relative">
           <img
-            src={member.image}
+            src={encodeURI(member.image)}
             alt={member.name}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
