@@ -213,14 +213,21 @@ export const TEAM_MEMBERS: TeamMember[] = [
   image: "Photograph\\20250928_122810 - RITU RAJ.jpg",
   socials: { linkedin: "#" }
 },
-
 {
-  id: 23,
-  name: "Shivam Singh",
+  id: 41,
+  name: "Krish",
   role: "Member",
-  image: "Photograph\\IMG_20250924_100617 - Shivam Singh.jpg",
+  image: "Photograph\\IMG-20251025-WA0010 - Krish Agarwal.jpg",
   socials: { linkedin: "#" }
 },
+{
+  id: 42,
+  name: "Soumya Sharma",
+  role: "Member",
+  image: "Photograph\\soumya.jpeg",
+  socials: { linkedin: "#" }
+},
+
 {
   id: 28,
   name: "Kshitij Tiwari",
@@ -244,47 +251,18 @@ export const TEAM_MEMBERS: TeamMember[] = [
   socials: { linkedin: "#" }
 },
 {
-  id: 32,
-  name: "Aditi Maharor",
-  role: "Member",
-  image: "Photograph\\Screenshot_2025-10-14-19-45-15-90_965bbf4d18d205f782c6b8409c5773a4 - Aditi M.jpg",
-  socials: { linkedin: "#" }
-},
-
-{
-  id: 34,
-  name: "Anushka Nandan",
-  role: "Member",
-  image: "Photograph\\IMG_20251025_105355 - Anushka Nandan.jpg",
-  socials: { linkedin: "#" }
-},
-{
-  id: 35,
-  name: "Abhishek Bharti",
-  role: "Member",
-  image: "Photograph\\IMG-20250826-WA0022 - Abhishek Bharti.jpg",
-  socials: { linkedin: "#" }
-},
-{
   id: 36,
   name: "Khushboo",
   role: "Member",
   image: "Photograph\\IMG-20250506-WA0062 - Khushboo.jpg",
   socials: { linkedin: "#" }
 },
-{
-  id: 37,
-  name: "Shreyanka Basak",
-  role: "Member",
-  image: "Photograph\\20251002_173246 - Shreyanka Basak.jpg",
-  socials: { linkedin: "#" }
-},
 
 {
-  id: 39,
-  name: "Prisha Raj",
+  id: 32,
+  name: "Aditi Maharor",
   role: "Member",
-  image: "Photograph\\IMG_20250503_141816_Original - Prisha Raj.jpeg",
+  image: "Photograph\\Screenshot_2025-10-14-19-45-15-90_965bbf4d18d205f782c6b8409c5773a4 - Aditi M.jpg",
   socials: { linkedin: "#" }
 },
 {
@@ -295,23 +273,46 @@ export const TEAM_MEMBERS: TeamMember[] = [
   socials: { linkedin: "#" }
 },
 {
-  id: 41,
-  name: "Krish",
+  id: 34,
+  name: "Anushka Nandan",
   role: "Member",
-  image: "Photograph\\IMG-20251025-WA0010 - Krish Agarwal.jpg",
+  image: "Photograph\\IMG_20251025_105355 - Anushka Nandan.jpg",
+  socials: { linkedin: "#" }
+},
+
+
+
+{
+  id: 39,
+  name: "Prisha Raj",
+  role: "Member",
+  image: "Photograph\\IMG_20250503_141816_Original - Prisha Raj.jpeg",
+  socials: { linkedin: "#" }
+},
+
+{
+  id: 37,
+  name: "Shreyanka Basak",
+  role: "Member",
+  image: "Photograph\\20251002_173246 - Shreyanka Basak.jpg",
   socials: { linkedin: "#" }
 },
 {
-  id: 42,
-  name: "Soumya Sharma",
+  id: 23,
+  name: "Shivam Singh",
   role: "Member",
-  image: "#",
+  image: "Photograph\\IMG_20250924_100617 - Shivam Singh.jpg",
   socials: { linkedin: "#" }
-}
-
+},
+{
+  id: 35,
+  name: "Abhishek Bharti",
+  role: "Member",
+  image: "Photograph\\IMG-20250826-WA0022 - Abhishek Bharti.jpg",
+  socials: { linkedin: "#" }
+},
 
 ];
-
 
 
 export const ALUMNI_MEMBERS: AlumniMember[] = [
@@ -319,81 +320,95 @@ export const ALUMNI_MEMBERS: AlumniMember[] = [
     id: 1,
     name: "Priyanshu Shankar",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=1"
+    image: "",
+    linkedin: "#"
   },
   {
     id: 2,
     name: "Sakshi Sharan",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=2"
+    image: "Photograph\\sakshi sharan.jpg",
+    linkedin: "#"
   },
   {
     id: 3,
     name: "Shashwat Srivastava",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=3"
+    image: "https://picsum.photos/400/400?random=3",
+    linkedin: "#"
   },
   {
     id: 4,
     name: "Yuvika",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=4"
+    image: "https://picsum.photos/400/400?random=4",
+    linkedin: "#"
   },
   {
     id: 5,
     name: "Anshika Pandey",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=5"
+    image: "https://picsum.photos/400/400?random=5",
+    linkedin: "#"
   },
   {
     id: 6,
     name: "Prem Kamal",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=6"
+    image: "https://picsum.photos/400/400?random=6",
+    linkedin: "#"
   },
   {
     id: 7,
     name: "Parth Kumar",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=7"
+    image: "https://picsum.photos/400/400?random=7",
+    linkedin: "#"
   },
   {
     id: 8,
     name: "Shubham Ghosh",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=8"
+    image: "https://picsum.photos/400/400?random=8",
+    linkedin: "#"
   },
   {
     id: 9,
     name: "Pragati",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=9"
+    image: "https://picsum.photos/400/400?random=9",
+    linkedin: "#"
   },
   {
     id: 10,
     name: "Aditya Kumar",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=10"
+    image: "https://picsum.photos/400/400?random=10",
+    linkedin: "#"
   },
   {
     id: 11,
     name: "Rishav",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=11"
+    image: "https://picsum.photos/400/400?random=11",
+    linkedin: "#"
   },
   {
     id: 12,
     name: "Shweta",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=12"
+    image: "https://picsum.photos/400/400?random=12",
+    linkedin: "#"
   },
   {
     id: 13,
     name: "Tripti Kumari",
     batch: "2022",
-    image: "https://picsum.photos/400/400?random=13"
+    image: "https://picsum.photos/400/400?random=13",
+    linkedin: "#"
   }
 ];
+
 
 
 export const EVENTS: EventItem[] = [

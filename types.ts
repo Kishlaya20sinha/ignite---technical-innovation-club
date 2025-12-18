@@ -14,9 +14,8 @@ export interface AlumniMember {
   id: number;
   name: string;
   batch: string;
-  company: string;
-  role: string;
   image: string;
+  linkedin?: string;
 }
 
 export interface EventItem {
