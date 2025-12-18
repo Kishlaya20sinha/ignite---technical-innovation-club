@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { Analytics } from "@vercel/analytics/react";
 
 // Components
 import Navbar from './components/Navbar';
@@ -56,6 +57,7 @@ const App: React.FC = () => {
           <AnimatedRoutes />
         </main>
         <Footer />
+        <Analytics />
       </div>
     </Router>
   );

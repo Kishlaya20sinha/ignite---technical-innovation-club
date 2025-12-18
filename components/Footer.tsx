@@ -2,6 +2,7 @@ import React from 'react';
 import { Flame, Github, Linkedin, Twitter, Mail, PhoneCall, Instagram } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+
 const Footer: React.FC = () => {
   return (
     <footer className="bg-dark/50 border-t border-white/5 pt-16 pb-8">
