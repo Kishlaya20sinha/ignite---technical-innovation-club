@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flame, Github, Linkedin, Twitter, Mail } from 'lucide-react';
+import { Flame, Github, Linkedin, Twitter, Mail, PhoneCall, Instagram } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
@@ -10,7 +10,15 @@ const Footer: React.FC = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Flame className="w-6 h-6 text-primary" />
+            
+               <div className="relative w-13 h-16">
+            {/* Logo Image - Ensure 'logo.png' is in your public folder */}
+            <img 
+              src="image.png" 
+              alt="IGNITE" 
+              className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(249,115,22,0.5)] group-hover:scale-110 transition-transform duration-300" 
+            />
+          </div>
               <span className="text-xl font-display font-bold">IGNITE</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
@@ -36,9 +44,16 @@ const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm text-gray-400">
               <li className="flex items-center space-x-2">
                 <Mail className="w-4 h-4" />
-                <span>contact@igniteclub.com</span>
+                <span>ignite@bitmesra.ac.in</span>
               </li>
-              <li>123 Innovation Drive, Tech Campus</li>
+              <li className="flex items-center space-x-2">
+                <PhoneCall className="w-4 h-4" />
+                <span>+91 9386881353</span>
+              </li>
+               <li className="flex items-center space-x-2">
+                <PhoneCall className="w-4 h-4" />
+                <span>+91 9508664027</span>
+              </li>
             </ul>
           </div>
 
@@ -46,15 +61,13 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="font-display font-bold mb-4">Follow Us</h4>
             <div className="flex space-x-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300">
-                <Github className="w-5 h-5" />
+              <a href="https://www.instagram.com/ignite_bitp" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300">
+                <Instagram className="w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300">
+              <a href="https://www.linkedin.com/company/ignite-club-bit-mesra/" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300">
                 <Linkedin className="w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300">
-                <Twitter className="w-5 h-5" />
-              </a>
+              
             </div>
           </div>
         </div>

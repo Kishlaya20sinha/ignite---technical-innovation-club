@@ -23,19 +23,11 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold mb-1">Email Us</h3>
-                  <p className="text-gray-400">contact@igniteclub.com</p>
+                  <p className="text-gray-400">ignite@bitmesra.ac.in</p>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-6">
-                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-primary flex-shrink-0">
-                  <MapPin size={24} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold mb-1">Visit Us</h3>
-                  <p className="text-gray-400">Technical Campus, Block C<br/>Innovation Hub, Room 302</p>
-                </div>
-              </div>
+             
 
               <div className="flex items-start space-x-6">
                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-primary flex-shrink-0">
@@ -43,7 +35,8 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold mb-1">Call Us</h3>
-                  <p className="text-gray-400">+1 (555) 123-4567</p>
+                  <p className="text-gray-400">+91 9386881353</p>
+                  <p className="text-gray-400">+91 9508664027</p>
                 </div>
               </div>
             </div>
@@ -55,11 +48,11 @@ const Contact: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-2">Name</label>
-                  <input type="text" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors" placeholder="John Doe" />
+                  <input type="text" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors" placeholder="Aditya" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-2">Email</label>
-                  <input type="email" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors" placeholder="john@example.com" />
+                  <input type="email" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors" placeholder="aditya@example.com" />
                 </div>
               </div>
               

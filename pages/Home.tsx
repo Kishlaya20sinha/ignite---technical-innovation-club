@@ -39,7 +39,7 @@ const Home: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-12"
           >
-            The premier technical club fostering innovation, coding excellence, and leadership for the next generation of tech giants.
+            The premier Tech Society Of BIT Mesra fostering innovation, coding excellence, and leadership for the next generation of tech giants.
           </motion.p>
 
           <motion.div
@@ -49,7 +49,7 @@ const Home: React.FC = () => {
             className="flex flex-col sm:flex-row justify-center gap-4"
           >
             <Link 
-              to="/join"
+              to="/"
               className="px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary-dark transition-all transform hover:scale-105 flex items-center justify-center gap-2"
             >
               Join the Club <ArrowRight className="w-4 h-4" />
@@ -78,12 +78,12 @@ const Home: React.FC = () => {
       {/* Stats Section */}
       <section className="py-20 border-y border-white/5 bg-white/[0.02]">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
             {[
-              { label: "Active Members", value: "500+" },
-              { label: "Events Hosted", value: "120+" },
-              { label: "Projects Built", value: "85+" },
-              { label: "Awards Won", value: "40+" },
+              { label: "Members", value: "200+" },
+              { label: "Active Members", value: "85+" },
+              { label: "Events Hosted", value: "50+" },
+              
             ].map((stat, index) => (
               <SectionWrapper key={index} delay={index * 0.1}>
                 <div className="text-center">

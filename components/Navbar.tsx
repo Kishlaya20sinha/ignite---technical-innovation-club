@@ -42,7 +42,7 @@ const Navbar: React.FC = () => {
       <div className="container mx-auto px-6 flex justify-between items-center">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-3 group">
-          <div className="relative w-10 h-10">
+          <div className="relative w-13 h-16">
             {/* Logo Image - Ensure 'logo.png' is in your public folder */}
             <img 
               src="image.png" 
