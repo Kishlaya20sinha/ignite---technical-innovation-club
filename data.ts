@@ -4,42 +4,42 @@ export const TEAM_MEMBERS: TeamMember[] = [
     id: 1,
     name: "Kishlaya Sinha",
     role: "President",
-    image: "Public\\Photograph\\Kishlaya Sinha - KISHLAYA SINHA.jpg",
+    image: "Public/Photograph/Kishlaya Sinha - KISHLAYA SINHA.jpg",
     socials: { linkedin: "https://www.linkedin.com/in/kishlaya-sinha-9134a0211?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" }
   },
   {
     id: 2,
     name: "Aditya Agarwal",
     role: "Vice President",
-    image: "Public\\Photograph\\917aa01f-9ef0-4275-8303-2acc78f6fb6a - Aditya Agarwal.jpeg",
+    image: "Public/Photograph/917aa01f-9ef0-4275-8303-2acc78f6fb6a - Aditya Agarwal.jpeg",
     socials: { linkedin: "https://www.linkedin.com/in/aditya2227?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" }
   },
   {
     id: 3,
     name: "Saumya Kumari",
     role: "Vice President",
-    image: "Public\\Photograph\\saumya.jpg",
+    image: "Public/Photograph/saumya.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 4,
     name: "Vishal Kumar Singh",
     role: "Secretary",
-    image: "Public\\Photograph\\IMG-20231231-WA0034 - vishal.jpg",
+    image: "Public/Photograph/IMG-20231231-WA0034 - vishal.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 5,
     name: "Shivam",
     role: "Treasurer",
-    image: "Public\\Photograph\\IMG-20250927-WA0002 - Shivam Lal.jpg",
+    image: "Public/Photograph/IMG-20250927-WA0002 - Shivam Lal.jpg",
     socials: { linkedin: "#" }
   },
   {
     id: 6,
     name: "Prem Kumar Singh",
     role: "Event Head",
-    image: "Public\\Photograph\\IMG_20251112_124705 - Prem Kumar Singh.jpg",
+    image: "Public/Photograph/IMG_20251112_124705 - Prem Kumar Singh.jpg",
     socials: { linkedin: "#" }
   },
   {
