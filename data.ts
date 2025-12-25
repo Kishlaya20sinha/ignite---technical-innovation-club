@@ -72,7 +72,7 @@ export const ALUMNI_MEMBERS: AlumniMember[] = [
   { id: 9, name: "Pragati", batch: "2022", image: "/alumni/pragati.jpg", linkedin: "#" },
   { id: 10, name: "Aditya Kumar", batch: "2022", image: "/alumni/aditya.jpeg", linkedin: "#" },
   { id: 11, name: "Rishav", batch: "2022", image: "/alumni/rishav.jpg", linkedin: "#" },
-  { id: 12, name: "Shweta", batch: "2022", image: "/alumni/alumni/shwetachoudhari.jpg", linkedin: "#" },
+  { id: 12, name: "Shweta", batch: "2022", image: "/alumni/shwetachoudhari.jpg", linkedin: "#" },
   { id: 13, name: "Tripti Kumari", batch: "2022", image: "/alumni/tripti.jpg", linkedin: "#" },
 ];
 
