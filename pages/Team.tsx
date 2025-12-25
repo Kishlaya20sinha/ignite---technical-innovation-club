@@ -19,8 +19,6 @@ const TeamCard: React.FC<{ member: TeamMember }> = ({ member }) => {
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
 
-          <div className="absolute bottom-2 left-4 text-xs text-white/70 bg-black/30 px-2 rounded">{member.image || 'no image'}</div>
-
           {member.socials.linkedin && member.socials.linkedin !== '#' && (
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
               <a
