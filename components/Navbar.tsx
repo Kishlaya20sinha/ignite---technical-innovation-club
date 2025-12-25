@@ -43,9 +43,9 @@ const Navbar: React.FC = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-3 group">
           <div className="relative w-13 h-16">
-            {/* Logo Image - Ensure 'logo.png' is in your public folder */}
+            {/* Logo Image - fallback to placeholder if missing */}
             <img 
-              src="/image.png" 
+              src="/image.svg" 
               alt="IGNITE" 
               className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(249,115,22,0.5)] group-hover:scale-110 transition-transform duration-300" 
             />
