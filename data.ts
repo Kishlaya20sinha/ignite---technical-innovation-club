@@ -6,10 +6,11 @@ export const TEAM_MEMBERS: TeamMember[] = [
   { id: 1, name: "Kishlaya Sinha", role: "President", image: "/team/kishlaya.jpg", socials: { linkedin: "https://www.linkedin.com/in/kishlaya-sinha-9134a0211" } },
 
   { id: 2, name: "Aditya Agarwal", role: "Vice President", image: "/team/aditya.jpeg", socials: { linkedin: "https://www.linkedin.com/in/aditya2227" } },
-  { id: 3, name: "Saumya Kumari", role: "Vice President", image: "", socials: { linkedin: "#" } },
+  { id: 3, name: "Saumya Kumari", role: "Vice President", image: "/team/saumya.jpg", socials: { linkedin: "#" } },
 
-  { id: 4, name: "Vishal Kumar Singh", role: "Secretary", image: "/team/vishal.jpg", socials: { linkedin: "#" } },
-  { id: 5, name: "Shivam Lal", role: "Treasurer", image: "/team/shivamlal.jpg", socials: { linkedin: "#" } },
+  { id: 4, name: "Vishal Kumar Singh", role: "Secretary", image: "/team/vishalkr.jpg", socials: { linkedin: "#" } },
+  { id: 5, name: "Shivam Lal", role: "Treasurer", image: "/team/shivam.png", socials: { linkedin: "#" } },
+
 
   { id: 6, name: "Prem Kumar Singh", role: "Event Head", image: "/team/premkumar.jpg", socials: { linkedin: "#" } },
   { id: 7, name: "Priyanka Agrawal", role: "Event Lead", image: "/team/priyanka.jpg", socials: { linkedin: "#" } },
@@ -33,29 +34,34 @@ export const TEAM_MEMBERS: TeamMember[] = [
 
   /* ===================== MEMBERS ===================== */
 
-  { id: 20, name: "Aditya Kumar", role: "Member", image: "/team/aditya.jpeg", socials: { linkedin: "#" } },
+  { id: 26, name: "Anjali Kumari", role: "Member", image: "/team/anjalicsejunior.jpg", socials: { linkedin: "#" } },
   { id: 21, name: "Ram Kishan Mehta", role: "Member", image: "/team/ram.jpg", socials: { linkedin: "#" } },
+  { id: 43, name: "Ashutosh Kumar", role: "Member", image: "/team/ashutosh.jpg", socials: { linkedin: "#" } },
+  { id: 27, name: "Raj Yash Gupta", role: "Member", image: "/team/rajyash.JPG", socials: { linkedin: "#" } },
+
+  { id: 33, name: "Rajeev Raj", role: "Member", image: "/team/rajeev.jpg", socials: { linkedin: "#" } },
+  { id: 38, name: "Kanan Kotwani", role: "Member", image: "/team/kanan.jpg", socials: { linkedin: "#" } },
+  { id: 40, name: "Sahil Suman", role: "Member", image: "/team/sahil.jpg", socials: { linkedin: "#" } },
+  { id: 36, name: "Khushboo", role: "Member", image: "/team/khushboo.jpg", socials: { linkedin: "#" } },
+
+  { id: 20, name: "Aditya Kumar", role: "Member", image: "/team/adityajunior.jpg", socials: { linkedin: "#" } },
+  { id: 25, name: "Ritu Raj", role: "Member", image: "/team/rituraj.jpg", socials: { linkedin: "#" } },
+  { id: 24, name: "Daya Shankar", role: "Member", image: "/team/dayashankar.png", socials: { linkedin: "#" } },
+  { id: 29, name: "Aayush Babu", role: "Member", image: "/team/aayushbabu.jpg", socials: { linkedin: "#" } },
+
+  { id: 34, name: "Anushka Nandan", role: "Member", image: "/team/anushka.jpg", socials: { linkedin: "#" } },
+  { id: 32, name: "Aditi Maharor", role: "Member", image: "/team/aditimaharor.jpg", socials: { linkedin: "#" } },
+  { id: 37, name: "Shreyanka Basak", role: "Member", image: "/team/shreyanka.jpg", socials: { linkedin: "#" } },
+  { id: 42, name: "Soumya Sharma", role: "Member", image: "/team/soumya.jpeg", socials: { linkedin: "#" } },
+
+  { id: 39, name: "Prisha Raj", role: "Member", image: "/team/prisha.jpeg", socials: { linkedin: "#" } },
+  { id: 41, name: "Krish", role: "Member", image: "/team/krish.jpg", socials: { linkedin: "#" } },
   { id: 22, name: "Vijay Kumar Das", role: "Member", image: "/team/vijay.jpg", socials: { linkedin: "#" } },
   { id: 23, name: "Shivam Singh", role: "Member", image: "/team/shivamsingh.jpg", socials: { linkedin: "#" } },
-  { id: 24, name: "Daya Shankar", role: "Member", image: "/team/dayashankar.png", socials: { linkedin: "#" } },
-  { id: 25, name: "Ritu Raj", role: "Member", image: "/team/rituraj.jpg", socials: { linkedin: "#" } },
-  { id: 26, name: "Anjali Kumari", role: "Member", image: "/team/anjalicsejunior.jpg", socials: { linkedin: "#" } },
-  { id: 27, name: "Raj Yash Gupta", role: "Member", image: "/team/rajyash.JPG", socials: { linkedin: "#" } },
+
   { id: 28, name: "Kshitij Tiwari", role: "Member", image: "/team/kshitij.jpg", socials: { linkedin: "#" } },
-  { id: 29, name: "Aayush Babu", role: "Member", image: "/team/aayushbabu.jpg", socials: { linkedin: "#" } },
-  { id: 31, name: "Krish Agarwal", role: "Member", image: "/team/krish.jpg", socials: { linkedin: "#" } },
-  { id: 32, name: "Aditi Maharor", role: "Member", image: "/team/aditimaharor.jpg", socials: { linkedin: "#" } },
-  { id: 33, name: "Rajeev Raj", role: "Member", image: "/team/rajeev.jpg", socials: { linkedin: "#" } },
-  { id: 34, name: "Anushka Nandan", role: "Member", image: "/team/anushka.jpg", socials: { linkedin: "#" } },
+  { id: 31, name: "Aayush Arya", role: "Member", image: "/team/ayusharya.jpg", socials: { linkedin: "#" } },
   { id: 35, name: "Abhishek Bharti", role: "Member", image: "/team/abhishekbharti.jpg", socials: { linkedin: "#" } },
-  { id: 36, name: "Khushboo", role: "Member", image: "/team/khushboo.jpg", socials: { linkedin: "#" } },
-  { id: 37, name: "Shreyanka Basak", role: "Member", image: "/team/shreyanka.jpg", socials: { linkedin: "#" } },
-  { id: 38, name: "Kanan Kotwani", role: "Member", image: "", socials: { linkedin: "#" } },
-  { id: 39, name: "Prisha Raj", role: "Member", image: "/team/prisha.jpeg", socials: { linkedin: "#" } },
-  { id: 40, name: "Sahil Suman", role: "Member", image: "/team/sahil.jpg", socials: { linkedin: "#" } },
-  { id: 41, name: "Krish", role: "Member", image: "/team/krish.jpg", socials: { linkedin: "#" } },
-  { id: 42, name: "Soumya Sharma", role: "Member", image: "/team/soumya.jpeg", socials: { linkedin: "#" } },
-  { id: 43, name: "Ashutosh Kumar", role: "Member", image: "/team/ashutosh.jpg", socials: { linkedin: "#" } },
 ];
 
 /* ===================== ALUMNI (2022) ===================== */
