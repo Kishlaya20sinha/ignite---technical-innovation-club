@@ -60,7 +60,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
   { id: 23, name: "Shivam Singh", role: "Member", image: "/team/shivamsingh.jpg", socials: { linkedin: "#" } },
 
   { id: 28, name: "Kshitij Tiwari", role: "Member", image: "/team/kshitij.jpg", socials: { linkedin: "#" } },
-  { id: 31, name: "Aayush Arya", role: "Member", image: "/team/ayusharya.jpg", socials: { linkedin: "#" } },
+  { id: 31, name: "Aayush Arya", role: "Member", image: "/team/ayusharya.png", socials: { linkedin: "#" } },
   { id: 35, name: "Abhishek Bharti", role: "Member", image: "/team/abhishekbharti.jpg", socials: { linkedin: "#" } },
 ];
 
@@ -75,8 +75,8 @@ export const ALUMNI_MEMBERS: AlumniMember[] = [
   { id: 6, name: "Prem Kamal", batch: "2022", image: "/alumni/premkamal.jpg", linkedin: "#" },
   { id: 7, name: "Parth Kumar", batch: "2022", image: "/alumni/parth.jpg", linkedin: "#" },
   { id: 8, name: "Shubham Ghosh", batch: "2022", image: "/placeholder.svg", linkedin: "#" },
-  { id: 9, name: "Pragati", batch: "2022", image: "/alumni/pragati.jpg", linkedin: "#" },
-  { id: 10, name: "Aditya Kumar", batch: "2022", image: "/alumni/aditya.jpeg", linkedin: "#" },
+  { id: 9, name: "Pragati", batch: "2022", image: "/alumni/pragati.svg", linkedin: "#" },
+  { id: 10, name: "Aditya Kumar", batch: "2022", image: "/alumni/aditya.svg", linkedin: "#" },
   { id: 11, name: "Rishav", batch: "2022", image: "/alumni/rishav.jpg", linkedin: "#" },
   { id: 12, name: "Shweta", batch: "2022", image: "/alumni/shwetachoudhari.jpg", linkedin: "#" },
   { id: 13, name: "Tripti Kumari", batch: "2022", image: "/alumni/tripti.jpg", linkedin: "#" },
