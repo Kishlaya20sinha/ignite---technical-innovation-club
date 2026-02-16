@@ -9,6 +9,8 @@ const navItems = [
   { name: 'Alumni', path: '/alumni' },
   { name: 'Events', path: '/events' },
   { name: 'Gallery', path: '/gallery' },
+  { name: 'Recruit', path: '/recruit' },
+  { name: 'Inginiux 2.0', path: '/inginiux' },
   { name: 'Contact', path: '/contact' },
 ];
 
@@ -36,8 +38,8 @@ const Navbar: React.FC = () => {
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: "circOut" }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
-          ? 'bg-black/60 backdrop-blur-xl py-3 border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.5)]'
-          : 'bg-transparent py-6'
+        ? 'bg-black/60 backdrop-blur-xl py-3 border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.5)]'
+        : 'bg-transparent py-6'
         }`}
     >
       <div className="container mx-auto px-6 flex justify-between items-center">
@@ -66,8 +68,8 @@ const Navbar: React.FC = () => {
               key={item.name}
               to={item.path}
               className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full ${location.pathname === item.path
-                  ? 'text-primary'
-                  : 'text-gray-400 hover:text-white'
+                ? 'text-primary'
+                : 'text-gray-400 hover:text-white'
                 }`}
             >
               {item.name}

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Analytics } from "@vercel/analytics/react";
 
@@ -17,6 +17,10 @@ import Events from './pages/Events';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 import Developers from './pages/Developers';
+import Recruit from './pages/Recruit';
+import Inginiux from './pages/Inginiux';
+import Exam from './pages/Exam';
+import Admin from './pages/Admin';
 
 // Scroll to top component
 const ScrollToTop = () => {
@@ -32,7 +36,7 @@ const AnimatedRoutes: React.FC = () => {
 
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+      <Routes location={location}>
         <Route path="/" element={<Home />} />
         <Route path="/team" element={<Team />} />
         <Route path="/alumni" element={<Alumni />} />
@@ -40,6 +44,10 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/developers" element={<Developers />} />
+        <Route path="/recruit" element={<Recruit />} />
+        <Route path="/inginiux" element={<Inginiux />} />
+        <Route path="/exam" element={<Exam />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </AnimatePresence>
   );
