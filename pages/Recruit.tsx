@@ -38,6 +38,8 @@ const Recruit: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (step !== 3) return; // Prevent submission on earlier steps (e.g., Enter key)
+
         if (form.interests.length === 0) {
             setError('Please select at least one interest (Ignite Club or BITP Esports).');
             return;
