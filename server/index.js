@@ -13,6 +13,7 @@ import examRoutes from './routes/exam.js';
 import teamRoutes from './routes/team.js';
 import userRoutes from './routes/user.js';
 import configRoutes from './routes/config.js';
+import shareRoutes from './routes/share.js';
 
 dotenv.config();
 
