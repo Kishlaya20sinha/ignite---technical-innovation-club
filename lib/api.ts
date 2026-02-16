@@ -1,4 +1,4 @@
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://ignite-technical-innovation-club.onrender.com';
 
 export const api = {
     // Generic fetch wrapper
@@ -16,6 +16,11 @@ export const api = {
         if (!res.ok) throw new Error(data.error || 'Something went wrong');
         return data;
     },
+
+    get: (endpoint: string) => api.request(endpoint),
+    post: (endpoint: string, body: any) => api.request(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+    put: (endpoint: string, body: any) => api.request(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
+    delete: (endpoint: string) => api.request(endpoint, { method: 'DELETE' }),
 
     // Auth
     login: (password: string) => api.request('/api/auth/login', { method: 'POST', body: JSON.stringify({ password }) }),

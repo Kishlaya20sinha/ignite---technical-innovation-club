@@ -3,21 +3,23 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
-const navItems = [
-  { name: 'Home', path: '/' },
-  { name: 'Team', path: '/team' },
-  { name: 'Alumni', path: '/alumni' },
-  { name: 'Events', path: '/events' },
-  { name: 'Gallery', path: '/gallery' },
-  { name: 'Recruit', path: '/recruit' },
-  { name: 'Inginiux 2.0', path: '/inginiux' },
-  { name: 'Contact', path: '/contact' },
-];
+import { api } from '../lib/api';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [featuredEvents, setFeaturedEvents] = useState<any[]>([]);
   const location = useLocation();
+
+  if (location.pathname === '/exam') return null; // Hide Navbar on exam page
+
+  useEffect(() => {
+    // Fetch events to check for featured mega events
+    api.getAllEvents().then(events => {
+      const featured = events.filter(e => e.type === 'mega' && e.isFeatured);
+      setFeaturedEvents(featured);
+    }).catch(() => { });
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +33,42 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     setIsOpen(false);
   }, [location]);
+
+  // Custom route mapping for special events (if they have hardcoded pages)
+  const customRoutes: Record<string, string> = {
+    'inginiux': '/inginiux',
+  };
+
+  const getEventPath = (eventName: string) => {
+    const lowerName = eventName.toLowerCase();
+
+    // Check for hardcoded custom routes first
+    for (const key in customRoutes) {
+      if (lowerName.includes(key)) {
+        return customRoutes[key];
+      }
+    }
+
+    // Otherwise, generate a slug
+    // e.g. "Xordium 5.0" -> "/xordium-5.0"
+    return `/${lowerName.replace(/\s+/g, '-')}`;
+  };
+
+  const navItems = [
+    { label: 'Home', path: '/' },
+    { label: 'Team', path: '/team' },
+    { label: 'Alumni', path: '/alumni' },
+    { label: 'Events', path: '/events' },
+    { label: 'Gallery', path: '/gallery' },
+    { label: 'Recruit', path: '/recruit' },
+    // Dynamically featured events
+    ...featuredEvents.map(e => ({
+      label: e.name,
+      path: getEventPath(e.name),
+      featured: true
+    })),
+    { label: 'Contact', path: '/contact' },
+  ];
 
   return (
     <motion.nav
@@ -65,15 +103,17 @@ const Navbar: React.FC = () => {
         <div className="hidden md:flex items-center space-x-1">
           {navItems.map((item) => (
             <Link
-              key={item.name}
+              key={item.label}
               to={item.path}
-              className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full ${location.pathname === item.path
-                ? 'text-primary'
-                : 'text-gray-400 hover:text-white'
+              className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full ${item.featured
+                ? 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'
+                : location.pathname === item.path
+                  ? 'text-primary'
+                  : 'text-gray-400 hover:text-white'
                 }`}
             >
-              {item.name}
-              {location.pathname === item.path && (
+              {item.label}
+              {!item.featured && location.pathname === item.path && (
                 <motion.div
                   layoutId="navIndicator"
                   className="absolute inset-0 bg-primary/10 border border-primary/20 rounded-full -z-10"
@@ -105,17 +145,22 @@ const Navbar: React.FC = () => {
             <div className="flex flex-col items-center justify-center h-full space-y-6">
               {navItems.map((item, index) => (
                 <motion.div
-                  key={item.name}
+                  key={item.label}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
                   <Link
                     to={item.path}
-                    className={`text-3xl font-display font-bold transition-colors ${location.pathname === item.path ? 'text-primary' : 'text-gray-300 hover:text-white'
+                    className={`text-3xl font-display font-bold transition-colors ${item.featured
+                      ? 'text-primary' // Featured items are always primary in mobile
+                      : location.pathname === item.path
+                        ? 'text-primary'
+                        : 'text-gray-300 hover:text-white'
                       }`}
+                    onClick={() => setIsOpen(false)} // Close menu on item click
                   >
-                    {item.name}
+                    {item.label}
                   </Link>
                 </motion.div>
               ))}

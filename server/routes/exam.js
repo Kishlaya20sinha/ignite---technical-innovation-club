@@ -1,7 +1,11 @@
 import express from 'express';
 import ExamQuestion from '../models/ExamQuestion.js';
 import ExamSubmission from '../models/ExamSubmission.js';
+import Recruitment from '../models/Recruitment.js';
+import ExamAllowlist from '../models/ExamAllowlist.js';
 import auth from '../middleware/auth.js';
+import { generateExamQuestions } from '../lib/groq.js';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -53,42 +57,91 @@ router.delete('/questions/:id', auth, async (req, res) => {
 // POST /api/exam/start — student: start exam
 router.post('/start', async (req, res) => {
   try {
-    const { name, email, rollNo } = req.body;
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // 1. Check if user applied for recruitment
+    let candidate = await Recruitment.findOne({ email: normalizedEmail });
     
+    // 2. If not in recruitment, check Allowlist
+    if (!candidate) {
+        candidate = await ExamAllowlist.findOne({ email: normalizedEmail });
+    }
+
+    if (!candidate) {
+        return res.status(403).json({ error: 'You are not registered for the exam. Access denied.' });
+    }
+
+    const { name, rollNo } = candidate;
+
     // Check if already submitted
-    const existing = await ExamSubmission.findOne({ rollNo });
+    const existing = await ExamSubmission.findOne({ email: normalizedEmail });
     if (existing && existing.status !== 'in-progress') {
       return res.status(400).json({ error: 'You have already submitted the exam.' });
     }
 
-    // Get active questions (WITHOUT correct answers)
-    const questions = await ExamQuestion.find({ isActive: true })
-      .select('-correctAnswer')
-      .lean();
+    // Check availability window needed? (Assuming yes from previous steps)
+    
+    // --- GENERATE QUESTIONS (GROQ or DB) ---
+    let finalQuestions = [];
 
-    // Shuffle questions
-    const shuffled = questions.sort(() => Math.random() - 0.5);
-
-    // Create or update submission record
-    let submission = existing;
-    if (!submission) {
-      submission = new ExamSubmission({
-        name, email, rollNo,
-        startedAt: new Date(),
-        totalQuestions: shuffled.length,
-      });
-      await submission.save();
+    if (process.env.GROQ_API_KEY) {
+        try {
+            // Generate customized paper
+            const aiQuestions = await generateExamQuestions(candidate.domain || 'General', 15);
+            // Map to unified format (handling lack of IDs in AI response)
+            finalQuestions = aiQuestions.map((q, i) => ({
+                _id: new mongoose.Types.ObjectId(),
+                question: q.question,
+                options: q.options || [],
+                type: q.type || 'mcq',
+                correctAnswer: q.correctAnswer
+            }));
+        } catch (e) {
+            console.error("AI Generation failed, falling back to DB", e);
+        }
     }
 
+    // Fallback if AI failed or Key missing
+    if (finalQuestions.length === 0) {
+        const dbQuestions = await ExamQuestion.find({ isActive: true }).lean();
+        finalQuestions = dbQuestions.sort(() => Math.random() - 0.5);
+    }
+
+    // Create submission record
+    let submission = existing;
+    if (!submission) {
+        submission = new ExamSubmission({
+            name, 
+            email: normalizedEmail, 
+            rollNo: rollNo || 'N/A', // Handle case where allowlist might miss rollNo if loose schema
+            startedAt: new Date(),
+            totalQuestions: finalQuestions.length,
+            questionSnapshot: finalQuestions 
+        });
+        await submission.save();
+    }
+
+    // Return questions WITHOUT answers
+    const clientQuestions = finalQuestions.map(q => ({
+        _id: q._id,
+        question: q.question,
+        options: q.options,
+        type: q.type
+    }));
+
     res.json({
-      submissionId: submission._id,
-      questions: shuffled,
-      startedAt: submission.startedAt,
-      timeLimit: 30, // minutes
+        submissionId: submission._id,
+        questions: clientQuestions,
+        startedAt: submission.startedAt,
+        timeLimit: 30, // minutes
+        candidateName: name // Send back name for UI welcome
     });
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(400).json({ error: 'You have already registered for this exam.' });
+      return res.status(400).json({ error: 'DB Error: Duplicate entry.' });
     }
     res.status(400).json({ error: err.message });
   }
@@ -105,15 +158,35 @@ router.post('/submit', async (req, res) => {
       return res.status(400).json({ error: 'Exam already submitted' });
     }
 
-    // Grade answers
-    const questions = await ExamQuestion.find({ isActive: true });
-    const questionMap = {};
-    questions.forEach(q => { questionMap[q._id.toString()] = q.correctAnswer; });
-
+    // Grade answers using the saved snapshot
     let score = 0;
-    answers.forEach(a => {
-      if (questionMap[a.questionId] === a.selectedAnswer) score++;
-    });
+    const snapshot = submission.questionSnapshot || []; // Fallback for old exams?
+    
+    if (snapshot.length > 0) {
+        // We have a unique paper saved
+        snapshot.forEach(q => {
+            const userAnswer = answers.find(a => a.questionId === q._id.toString())?.selectedAnswer;
+            
+            if (q.type === 'mcq') {
+                 if (userAnswer === q.correctAnswer) score++;
+            } else {
+                // Input type: simple rough check or manual grading required
+                // For now, exact match string (case-insensitive)
+                if (String(userAnswer).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()) {
+                    score++;
+                }
+            }
+        });
+    } else {
+        // Fallback to global DB questions (Legacy support)
+        const questions = await ExamQuestion.find({ isActive: true });
+        const questionMap = {};
+        questions.forEach(q => { questionMap[q._id.toString()] = q.correctAnswer; });
+        answers.forEach(a => {
+            // Only grading MCQs here safely
+            if (questionMap[a.questionId] === a.selectedAnswer) score++;
+        });
+    }
 
     submission.answers = answers;
     submission.score = score;
@@ -142,6 +215,68 @@ router.post('/violation', async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// GET /api/exam/active — admin: live monitoring
+router.get('/active', auth, async (req, res) => {
+  try {
+    const active = await ExamSubmission.find({ status: 'in-progress' })
+      .select('name email rollNo startedAt violations violationLog adminWarnings score')
+      .sort({ startedAt: -1 });
+    res.json(active);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/exam/warning — admin: send warning to student
+router.post('/warning', auth, async (req, res) => {
+  try {
+    const { submissionId, message } = req.body;
+    const submission = await ExamSubmission.findById(submissionId);
+    if (!submission) return res.status(404).json({ error: 'Submission not found' });
+
+    submission.adminWarnings.push({ message, timestamp: new Date() });
+    await submission.save();
+
+    res.json({ message: 'Warning sent', warnings: submission.adminWarnings });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET /api/exam/status/:submissionId — student: poll for warnings/status
+router.get('/status/:submissionId', async (req, res) => {
+    try {
+        const submission = await ExamSubmission.findById(req.params.submissionId).select('status adminWarnings');
+        if (!submission) return res.status(404).json({ error: 'Not found' });
+        res.json(submission);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===== ALLOWLIST MANAGEMENT =====
+
+// POST /api/exam/allowlist — admin: add user to allowlist
+router.post('/allowlist', auth, async (req, res) => {
+    try {
+        const entry = new ExamAllowlist(req.body);
+        await entry.save();
+        res.status(201).json(entry);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// GET /api/exam/allowlist — admin: get allowlist
+router.get('/allowlist', auth, async (req, res) => {
+    try {
+        const list = await ExamAllowlist.find().sort({ createdAt: -1 });
+        res.json(list);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // GET /api/exam/submissions — admin: all submissions

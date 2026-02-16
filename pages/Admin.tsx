@@ -7,13 +7,39 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 
-type Tab = 'recruitment' | 'events' | 'exam' | 'team';
+type Tab = 'recruitment' | 'events' | 'exam' | 'team' | 'live';
 
 const Admin: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [password, setPassword] = useState('');
     const [loginError, setLoginError] = useState('');
     const [activeTab, setActiveTab] = useState<Tab>('recruitment');
+    const [liveUsers, setLiveUsers] = useState<any[]>([]);
+
+    // Monitor polling
+    useEffect(() => {
+        if (activeTab === 'live') {
+            const fetchLive = async () => {
+                try {
+                    const res = await api.get('/exam/active');
+                    setLiveUsers(res.data);
+                } catch (err) { console.error(err); }
+            };
+            fetchLive();
+            const interval = setInterval(fetchLive, 5000);
+            return () => clearInterval(interval);
+        }
+    }, [activeTab]);
+
+    const sendWarning = async (id: string) => {
+        const msg = prompt("Enter warning message:");
+        if (!msg) return;
+        try {
+            await api.post('/exam/warning', { submissionId: id, message: msg });
+            alert("Warning sent!");
+        } catch (err) { alert("Failed to send"); }
+    };
+
     const [loading, setLoading] = useState(false);
 
     // Check existing token
@@ -84,8 +110,14 @@ const Admin: React.FC = () => {
                 <div className="flex gap-1 mb-8 bg-white/[0.02] p-1 rounded-xl border border-white/5 overflow-x-auto">
                     {tabs.map(tab => (
                         <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-primary text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === tab.id
+                                ? (tab.id === 'live' ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-primary text-white')
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
                                 }`}>
+                            {tab.id === 'live' && <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                            </span>}
                             {tab.icon} {tab.label}
                         </button>
                     ))}
@@ -96,7 +128,95 @@ const Admin: React.FC = () => {
                     <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                         {activeTab === 'recruitment' && <RecruitmentPanel />}
                         {activeTab === 'events' && <EventsPanel />}
-                        {activeTab === 'exam' && <ExamPanel />}
+                        {activeTab === 'live' && (
+                            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                                <div className="p-6 border-b border-white/10">
+                                    <h2 className="text-xl font-bold">Live Exam Monitor</h2>
+                                    <p className="text-sm text-gray-400">Auto-refreshes every 5 seconds</p>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-white/5">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase">Student</th>
+                                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase">Started At</th>
+                                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase">Violations</th>
+                                                <th className="px-6 py-4 text-right text-xs font-medium text-gray-400 uppercase">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                            {liveUsers.map((user) => (
+                                                <tr key={user._id} className="hover:bg-white/[0.02]">
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-medium text-white">{user.name}</div>
+                                                        <div className="text-sm text-gray-400">{user.rollNo}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-300">
+                                                        {new Date(user.startedAt).toLocaleTimeString()}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`px-2 py-1 rounded-full text-xs ${user.violations > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                                            {user.violations} Detected
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <button
+                                                            onClick={() => sendWarning(user._id)}
+                                                            className="text-yellow-500 hover:text-yellow-400 bg-yellow-500/10 px-3 py-1 rounded hover:bg-yellow-500/20 transition-colors"
+                                                        >
+                                                            ⚠️ Warn
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {liveUsers.length === 0 && (
+                                                <tr><td colSpan={4} className="p-8 text-center text-gray-500">No active students</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'exam' && (
+                            <div className="space-y-6">
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                                    <h2 className="text-xl font-bold mb-4">Exam Access Allowlist</h2>
+                                    <div className="flex gap-4 items-end mb-6">
+                                        <div className="flex-1">
+                                            <label className="text-sm text-gray-400">Name</label>
+                                            <input id="allowName" className="w-full bg-white/5 border border-white/10 rounded p-2 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="text-sm text-gray-400">Email</label>
+                                            <input id="allowEmail" className="w-full bg-white/5 border border-white/10 rounded p-2 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="text-sm text-gray-400">Roll No</label>
+                                            <input id="allowRoll" className="w-full bg-white/5 border border-white/10 rounded p-2 text-white" />
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                const name = (document.getElementById('allowName') as HTMLInputElement).value;
+                                                const email = (document.getElementById('allowEmail') as HTMLInputElement).value;
+                                                const rollNo = (document.getElementById('allowRoll') as HTMLInputElement).value;
+                                                if (name && email && rollNo) {
+                                                    try {
+                                                        await api.request('/api/exam/allowlist', { method: 'POST', body: JSON.stringify({ name, email, rollNo }) });
+                                                        alert('User added to allowlist');
+                                                        (document.getElementById('allowName') as HTMLInputElement).value = '';
+                                                        (document.getElementById('allowEmail') as HTMLInputElement).value = '';
+                                                        (document.getElementById('allowRoll') as HTMLInputElement).value = '';
+                                                    } catch (e: any) { alert(e.message); }
+                                                }
+                                            }}
+                                            className="bg-primary px-4 py-2 rounded text-white font-bold"
+                                        >Add User</button>
+                                    </div>
+                                </div>
+                                <ExamPanel />
+                            </div>
+                        )}
                         {activeTab === 'team' && <TeamPanel />}
                     </motion.div>
                 </AnimatePresence>
@@ -106,7 +226,7 @@ const Admin: React.FC = () => {
 };
 
 // ==================== RECRUITMENT PANEL ====================
-const RecruitmentPanel: React.FC = () => {
+function RecruitmentPanel() {
     const [applications, setApplications] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -238,12 +358,18 @@ const RecruitmentPanel: React.FC = () => {
 };
 
 // ==================== EVENTS PANEL ====================
-const EventsPanel: React.FC = () => {
+function EventsPanel() {
     const [events, setEvents] = useState<any[]>([]);
     const [registrations, setRegistrations] = useState<any[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [showRegs, setShowRegs] = useState<string | null>(null);
-    const [form, setForm] = useState({ name: '', description: '', date: '', venue: '', type: 'standalone', parentId: '', isTeamEvent: false, maxTeamSize: 1 });
+    const [form, setForm] = useState({
+        name: '', description: '', date: '', venue: '', type: 'standalone',
+        parentId: '', isTeamEvent: false, maxTeamSize: 1, image: '',
+        registrationsOpen: true, status: 'upcoming', isFeatured: false
+    });
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [editId, setEditId] = useState<string | null>(null);
     const [expandedMegaId, setExpandedMegaId] = useState<string | null>(null);
 
     const load = async () => {
@@ -255,27 +381,61 @@ const EventsPanel: React.FC = () => {
     };
     useEffect(() => { load(); }, []);
 
-    const createEvent = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const payload = { ...form };
-            if (payload.type === 'standalone' || payload.type === 'mega') {
-                delete (payload as any).parentId;
-            }
-            if (payload.type === 'sub') {
-                (payload as any).type = 'standalone'; // Sub events are technically standalone but have a parent
-                // Actually, let's keep type 'standalone' for sub-events too, just with a parentId.
-                // Or we can just send it as is. The model defaults to 'standalone'.
+            const formData = new FormData();
+            formData.append('name', form.name);
+            formData.append('description', form.description);
+            formData.append('date', form.date);
+            formData.append('venue', form.venue);
+            formData.append('type', form.type);
+            formData.append('isTeamEvent', String(form.isTeamEvent));
+            formData.append('maxTeamSize', String(form.maxTeamSize));
+            formData.append('registrationsOpen', String(form.registrationsOpen));
+            formData.append('status', form.status);
+            formData.append('isFeatured', String(form.isFeatured));
+
+            if (form.parentId) formData.append('parentId', form.parentId);
+
+            if (form.type === 'sub' && !form.parentId) { alert('Select parent event'); return; }
+            // if (form.type === 'sub') formData.set('type', 'standalone'); // Backend handles this logic or ignore
+
+            if (imageFile) {
+                formData.append('image', imageFile);
             }
 
-            // Clean up empty parentId
-            if (!payload.parentId) delete (payload as any).parentId;
+            const token = localStorage.getItem('ignite_admin_token');
+            const url = `${(import.meta as any).env?.VITE_API_URL || 'https://ignite-technical-innovation-club.onrender.com'}/api/events${editId ? `/${editId}` : ''}`;
 
-            await api.createEvent(payload);
+            await fetch(url, {
+                method: editId ? 'PUT' : 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
             setShowForm(false);
-            setForm({ name: '', description: '', date: '', venue: '', type: 'standalone', parentId: '', isTeamEvent: false, maxTeamSize: 1 });
+            resetForm();
             load();
-        } catch { }
+        } catch (err) { console.error(err); }
+    };
+
+    const resetForm = () => {
+        setForm({ name: '', description: '', date: '', venue: '', type: 'standalone', parentId: '', isTeamEvent: false, maxTeamSize: 1, image: '', registrationsOpen: true, status: 'upcoming', isFeatured: false });
+        setImageFile(null);
+        setEditId(null);
+    };
+
+    const handleEdit = (e: any) => {
+        setForm({
+            name: e.name, description: e.description, date: e.date ? e.date.split('T')[0] : '',
+            venue: e.venue, type: e.parentId ? 'sub' : e.type,
+            parentId: e.parentId || '', isTeamEvent: e.isTeamEvent, maxTeamSize: e.maxTeamSize,
+            image: e.image || '', registrationsOpen: e.registrationsOpen, status: e.status,
+            isFeatured: e.isFeatured || false
+        });
+        setEditId(e._id);
+        setShowForm(true);
     };
 
     const deleteEvent = async (id: string) => {
@@ -293,32 +453,33 @@ const EventsPanel: React.FC = () => {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-bold">{events.length} Events ({rootEvents.length} Root)</h2>
-                <button onClick={() => { setForm({ name: '', description: '', date: '', venue: '', type: 'standalone', parentId: '', isTeamEvent: false, maxTeamSize: 1 }); setShowForm(!showForm); }} className="flex items-center gap-1 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors">
+                <button onClick={() => { resetForm(); setShowForm(!showForm); }} className="flex items-center gap-1 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors">
                     <Plus className="w-4 h-4" /> Add Event
                 </button>
             </div>
 
             {showForm && (
-                <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} onSubmit={createEvent}
+                <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} onSubmit={handleSubmit}
                     className="p-4 bg-white/[0.02] border border-white/5 rounded-xl mb-6 space-y-3">
 
-                    <div className="flex gap-4 mb-2">
+                    <div className="flex gap-4 mb-2 flex-wrap">
+                        {/* Type Radios */}
                         <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="eventType" checked={form.type === 'standalone' && !form.parentId} onChange={() => setForm({ ...form, type: 'standalone', parentId: '' })} className="accent-primary" />
-                            <span className="text-sm">Single Event</span>
+                            <input type="radio" name="eventType" checked={form.type === 'standalone'} onChange={() => setForm({ ...form, type: 'standalone', parentId: '' })} className="accent-primary" />
+                            <span className="text-sm">Single</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="eventType" checked={form.type === 'mega'} onChange={() => setForm({ ...form, type: 'mega', parentId: '' })} className="accent-primary" />
-                            <span className="text-sm">Mega Event</span>
+                            <span className="text-sm">Mega</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="eventType" checked={!!form.parentId} onChange={() => setForm({ ...form, type: 'standalone', parentId: rootEvents.find(e => e.type === 'mega')?._id || '' })} className="accent-primary" />
-                            <span className="text-sm">Sub Event</span>
+                            <input type="radio" name="eventType" checked={form.type === 'sub'} onChange={() => setForm({ ...form, type: 'sub', parentId: rootEvents.find(e => e.type === 'mega')?._id || '' })} className="accent-primary" />
+                            <span className="text-sm">Sub</span>
                         </label>
                     </div>
 
-                    {form.parentId !== '' && (
-                        <select value={form.parentId} onChange={e => setForm({ ...form, parentId: e.target.value })} className={inputClass}>
+                    {form.type === 'sub' && (
+                        <select value={form.parentId} onChange={e => setForm({ ...form, parentId: e.target.value })} className={inputClass} required>
                             <option value="">Select Parent Mega Event</option>
                             {rootEvents.filter(e => e.type === 'mega').map(e => (
                                 <option key={e._id} value={e._id}>{e.name}</option>
@@ -329,12 +490,32 @@ const EventsPanel: React.FC = () => {
                     <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Event Name *" required className={inputClass} />
                     <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Description" rows={2} className={inputClass} />
 
+                    <div className="flex gap-2 items-center">
+                        <input type="file" onChange={e => setImageFile(e.target.files ? e.target.files[0] : null)} className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark" />
+                        {form.image && !imageFile && <span className="text-xs text-green-400">Current: {form.image.split('/').pop()}</span>}
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
                         <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className={inputClass} />
                         <input value={form.venue} onChange={e => setForm({ ...form, venue: e.target.value })} placeholder="Venue" className={inputClass} />
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="flex items-center gap-2 bg-white/5 rounded-xl px-4">
+                            <span className="text-sm text-gray-400">Status:</span>
+                            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className="bg-transparent text-white text-sm outline-none w-full">
+                                <option value="upcoming">Upcoming</option>
+                                <option value="live">Live</option>
+                                <option value="ended">Ended</option>
+                            </select>
+                        </div>
+                        <label className="flex items-center gap-2 px-4 bg-white/5 rounded-xl text-sm text-gray-400 cursor-pointer">
+                            <input type="checkbox" checked={form.registrationsOpen} onChange={e => setForm({ ...form, registrationsOpen: e.target.checked })} className="accent-primary" />
+                            Registrations Open
+                        </label>
+                    </div>
+
+                    <div className="flex items-center gap-4 flex-wrap">
                         <label className="flex items-center gap-2 text-sm text-gray-400">
                             <input type="checkbox" checked={form.isTeamEvent} onChange={e => setForm({ ...form, isTeamEvent: e.target.checked })} className="accent-primary" /> Team Event
                         </label>
@@ -342,10 +523,18 @@ const EventsPanel: React.FC = () => {
                             <input type="number" value={form.maxTeamSize} onChange={e => setForm({ ...form, maxTeamSize: parseInt(e.target.value) })} min={2} max={10}
                                 className="w-20 bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-sm text-white" placeholder="Max size" />
                         )}
+
+                        {form.type === 'mega' && (
+                            <label className="flex items-center gap-2 text-sm text-yellow-400">
+                                <input type="checkbox" checked={form.isFeatured} onChange={e => setForm({ ...form, isFeatured: e.target.checked })} className="accent-yellow-400" />
+                                Featured in Navbar
+                            </label>
+                        )}
                     </div>
+
                     <div className="flex gap-2">
-                        <button type="submit" className="px-4 py-2 bg-primary text-white text-sm rounded-lg">Create</button>
-                        <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border border-white/10 text-sm rounded-lg text-gray-400">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-primary text-white text-sm rounded-lg">{editId ? 'Update' : 'Create'}</button>
+                        <button type="button" onClick={() => { setShowForm(false); resetForm(); }} className="px-4 py-2 border border-white/10 text-sm rounded-lg text-gray-400">Cancel</button>
                     </div>
                 </motion.form>
             )}
@@ -363,6 +552,9 @@ const EventsPanel: React.FC = () => {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                             {event.type === 'mega' && <span className="bg-purple-500/20 text-purple-400 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Mega</span>}
+                                            {event.isFeatured && <span className="bg-yellow-500/20 text-yellow-400 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Featured</span>}
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold ${event.status === 'live' ? 'bg-green-500/20 text-green-400' : event.status === 'ended' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>{event.status}</span>
+                                            {!event.registrationsOpen && <span className="text-[10px] px-2 py-0.5 bg-gray-500/20 text-gray-400 rounded-full font-bold">Closed</span>}
                                             <h3 className="font-bold">{event.name}</h3>
                                         </div>
                                         <p className="text-sm text-gray-500 mt-1">{event.description}</p>
@@ -373,6 +565,7 @@ const EventsPanel: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        <button onClick={() => handleEdit(event)} className="p-1.5 text-gray-400 hover:text-white"><FileText className="w-4 h-4" /></button>
                                         {event.type === 'mega' && (
                                             <button onClick={() => setExpandedMegaId(expandedMegaId === event._id ? null : event._id)}
                                                 className="text-xs px-2 py-1 bg-white/5 rounded-lg text-gray-400">
@@ -414,10 +607,14 @@ const EventsPanel: React.FC = () => {
                                         return (
                                             <div key={sub._id} className="bg-white/5 rounded-lg p-3 flex justify-between items-center">
                                                 <div>
-                                                    <p className="font-bold text-sm">{sub.name}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-bold text-sm">{sub.name}</p>
+                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full uppercase ${sub.status === 'live' ? 'bg-green-500/20 text-green-400' : 'text-gray-500'}`}>{sub.status}</span>
+                                                    </div>
                                                     <p className="text-xs text-gray-500">{new Date(sub.date).toLocaleDateString()} • {sub.venue}</p>
                                                 </div>
                                                 <div className="flex gap-2">
+                                                    <button onClick={() => handleEdit(sub)} className="p-1 text-gray-400 hover:text-white"><FileText className="w-3 h-3" /></button>
                                                     <button onClick={() => setShowRegs(showRegs === sub._id ? null : sub._id)}
                                                         className="text-xs px-2 py-1 bg-white/5 rounded text-gray-400">
                                                         {subRegs.length} Regs
@@ -425,12 +622,7 @@ const EventsPanel: React.FC = () => {
                                                     <button onClick={() => deleteEvent(sub._id)} className="text-red-400 p-1"><Trash2 className="w-3 h-3" /></button>
                                                 </div>
                                                 {showRegs === sub._id && subRegs.length > 0 && (
-                                                    <div className="hidden"> {/* Placeholder for simple view or modal for sub-regs if needed, or just standard view */}
-                                                        {/* For now let's just show count. To see details, maybe expand? 
-                                                            Actually, let's allow expanding sub-regs inline or just keep it simple. 
-                                                            Re-using the standard logic: if showRegs matches, we could show a modal or conditional rendering.
-                                                         */}
-                                                    </div>
+                                                    <div className="hidden"></div>
                                                 )}
                                             </div>
                                         );
@@ -447,7 +639,7 @@ const EventsPanel: React.FC = () => {
 };
 
 // ==================== EXAM PANEL ====================
-const ExamPanel: React.FC = () => {
+function ExamPanel() {
     const [questions, setQuestions] = useState<any[]>([]);
     const [submissions, setSubmissions] = useState<any[]>([]);
     const [showForm, setShowForm] = useState(false);
@@ -570,8 +762,7 @@ const ExamPanel: React.FC = () => {
     );
 };
 
-// ==================== TEAM PANEL ====================
-const TeamPanel: React.FC = () => {
+function TeamPanel() {
     const [members, setMembers] = useState<any[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [editId, setEditId] = useState<string | null>(null);

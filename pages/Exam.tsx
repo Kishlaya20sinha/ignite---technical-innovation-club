@@ -7,13 +7,15 @@ interface Question {
     _id: string;
     question: string;
     options: string[];
+    type: 'mcq' | 'input';
 }
 
 const Exam: React.FC = () => {
     const [phase, setPhase] = useState<'register' | 'exam' | 'result'>('register');
-    const [form, setForm] = useState({ name: '', email: '', rollNo: '' });
+    const [form, setForm] = useState({ email: '' }); // Only email needed locally
+    const [candidateName, setCandidateName] = useState('');
     const [questions, setQuestions] = useState<Question[]>([]);
-    const [answers, setAnswers] = useState<Record<string, number>>({});
+    const [answers, setAnswers] = useState<Record<string, number | string>>({});
     const [currentQ, setCurrentQ] = useState(0);
     const [submissionId, setSubmissionId] = useState('');
     const [timeLeft, setTimeLeft] = useState(0);
@@ -117,19 +119,21 @@ const Exam: React.FC = () => {
         return () => document.removeEventListener('fullscreenchange', handleFullscreen);
     }, [phase, violations, submissionId, autoSubmit]);
 
-    const startExam = async (e: React.FormEvent) => {
+    const handleStart = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!form.email) return alert("Please enter email");
         setLoading(true);
-        setError('');
+        setError(''); // Clear previous errors
         try {
-            const data = await api.startExam(form);
-            setQuestions(data.questions);
-            setSubmissionId(data.submissionId);
-            setTimeLeft(data.timeLimit * 60);
-            enterFullscreen();
+            const res = await api.startExam({ email: form.email });
+            setSubmissionId(res.submissionId);
+            setQuestions(res.questions);
+            setTimeLeft(res.timeLimit * 60);
+            setCandidateName(res.candidateName); // Welcome user by name
+            enterFullscreen(); // Keep fullscreen logic
             setPhase('exam');
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || "Failed to start"); // Use setError for consistency
         }
         setLoading(false);
     };
@@ -154,6 +158,29 @@ const Exam: React.FC = () => {
     const inputClass = "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all";
 
     // ===== REGISTER =====
+    // Poll for warnings
+    useEffect(() => {
+        if (!submissionId || phase !== 'exam') return;
+
+        const interval = setInterval(async () => {
+            try {
+                const res = await api.get(`/exam/status/${submissionId}`);
+                const warnings = res.data.adminWarnings || [];
+                if (warnings.length > 0) {
+                    const lastWarning = warnings[warnings.length - 1];
+                    // Simple check: if we haven't seen this timestamp/msg, alert
+                    // For now, just alerting implementation
+                    alert(`⚠️ ADMIN WARNING:\n${lastWarning.message}`);
+                }
+                if (res.data.status === 'submitted' || res.data.status === 'auto-submitted') {
+                    setPhase('result');
+                }
+            } catch (e) { console.error("Poll failed", e); }
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, [submissionId, phase]);
+
     if (phase === 'register') {
         return (
             <div className="min-h-screen pt-24 pb-20 flex items-center justify-center">
@@ -173,10 +200,8 @@ const Exam: React.FC = () => {
                             <div className="flex items-center gap-2"><Shield className="w-4 h-4 text-primary" /> Fullscreen mode required</div>
                             <div className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-yellow-500" /> {MAX_VIOLATIONS} violations = auto-submit</div>
                         </div>
-                        <form onSubmit={startExam} className="space-y-4">
-                            <input name="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Full Name *" required className={inputClass} />
+                        <form onSubmit={handleStart} className="space-y-4">
                             <input name="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email *" type="email" required className={inputClass} />
-                            <input name="rollNo" value={form.rollNo} onChange={e => setForm({ ...form, rollNo: e.target.value })} placeholder="Roll Number *" required className={inputClass} />
                             {error && <p className="text-red-400 text-sm bg-red-400/10 p-3 rounded-xl">{error}</p>}
                             <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50">
                                 {loading ? 'Loading...' : 'Start Exam'}
@@ -213,22 +238,31 @@ const Exam: React.FC = () => {
                     <motion.div key={q._id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="max-w-3xl mx-auto">
                         <h2 className="text-xl font-bold mb-8 leading-relaxed">{q.question}</h2>
                         <div className="space-y-3 mb-8">
-                            {q.options.map((option, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setAnswers({ ...answers, [q._id]: i })}
-                                    className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ${answers[q._id] === i
+                            {q.type === 'input' ? (
+                                <textarea
+                                    value={answers[q._id] || ''}
+                                    onChange={(e) => setAnswers({ ...answers, [q._id]: e.target.value })}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-primary transition-all h-32"
+                                    placeholder="Type your answer here..."
+                                />
+                            ) : (
+                                q.options.map((option, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setAnswers({ ...answers, [q._id]: i })}
+                                        className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ${answers[q._id] === i
                                             ? 'bg-primary/10 border-primary/50 text-white'
                                             : 'bg-white/[0.02] border-white/5 text-gray-300 hover:border-white/15 hover:bg-white/[0.04]'
-                                        }`}
-                                >
-                                    <span className={`inline-block w-8 h-8 rounded-lg text-center leading-8 mr-3 text-sm font-bold ${answers[q._id] === i ? 'bg-primary text-white' : 'bg-white/5 text-gray-500'
-                                        }`}>
-                                        {String.fromCharCode(65 + i)}
-                                    </span>
-                                    {option}
-                                </button>
-                            ))}
+                                            }`}
+                                    >
+                                        <span className={`inline-block w-8 h-8 rounded-lg text-center leading-8 mr-3 text-sm font-bold ${answers[q._id] === i ? 'bg-primary text-white' : 'bg-white/5 text-gray-500'
+                                            }`}>
+                                            {String.fromCharCode(65 + i)}
+                                        </span>
+                                        {option}
+                                    </button>
+                                ))
+                            )}
                         </div>
                     </motion.div>
                 )}

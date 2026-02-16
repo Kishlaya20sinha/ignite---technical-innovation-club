@@ -2,15 +2,44 @@ import express from 'express';
 import Event from '../models/Event.js';
 import EventRegistration from '../models/EventRegistration.js';
 import auth from '../middleware/auth.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import sharp from 'sharp';
+import { sendEmail } from '../lib/mailer.js';
 
 const router = express.Router();
+
+// Multer Config (Memory Storage for Sharp processing)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// Helper to process and save image
+const saveImage = async (buffer) => {
+    const dir = 'uploads/events/';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    
+    const filename = `${Date.now()}.jpeg`;
+    const filepath = path.join(dir, filename);
+    
+    await sharp(buffer)
+        .resize(800, 600, { fit: 'inside', withoutEnlargement: true }) // Resize to reasonable max dimensions
+        .jpeg({ quality: 80 }) // Compress to JPEG with 80% quality
+        .toFile(filepath);
+        
+    return `/${dir}${filename}`;
+};
 
 // ===== EVENT MANAGEMENT (Admin) =====
 
 // POST /api/events — admin: create event
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
-    const event = new Event(req.body);
+    const eventData = req.body;
+    if (req.file) {
+        eventData.image = await saveImage(req.file.buffer);
+    }
+    const event = new Event(eventData);
     await event.save();
     res.status(201).json(event);
   } catch (err) {
@@ -39,9 +68,13 @@ router.get('/all', auth, async (req, res) => {
 });
 
 // PUT /api/events/:id — admin: update event
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, upload.single('image'), async (req, res) => {
   try {
-    const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updateData = req.body;
+    if (req.file) {
+        updateData.image = await saveImage(req.file.buffer);
+    }
+    const event = await Event.findByIdAndUpdate(req.params.id, updateData, { new: true });
     res.json(event);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -82,6 +115,32 @@ router.post('/register', async (req, res) => {
   try {
     const registration = new EventRegistration(req.body);
     await registration.save();
+    
+    // Fetch event details for the email
+    const event = await Event.findById(req.body.eventId);
+    
+    if (event) {
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; color: #333;">
+            <h2 style="color: #f97316;">Registration Confirmed!</h2>
+            <p>Hi <strong>${registration.name}</strong>,</p>
+            <p>You have successfully registered for <strong>${event.name}</strong>.</p>
+            <hr/>
+            <p><strong>Event Details:</strong></p>
+            <ul>
+                <li><strong>Date:</strong> ${event.date ? new Date(event.date).toDateString() : 'TBA'}</li>
+                <li><strong>Venue:</strong> ${event.venue || 'TBA'}</li>
+            </ul>
+            <p>${event.description || ''}</p>
+            <br/>
+            <p>See you there!</p>
+            <p><strong>Team IGNITE</strong></p>
+          </div>
+        `;
+        
+        sendEmail(registration.email, `Registration Confirmed: ${event.name}`, emailHtml).catch(err => console.error('Event registration email failed:', err));
+    }
+
     res.status(201).json({ message: 'Registered successfully!', id: registration._id });
   } catch (err) {
     if (err.code === 11000) {

@@ -12,6 +12,7 @@ import eventsRoutes from './routes/events.js';
 import examRoutes from './routes/exam.js';
 import teamRoutes from './routes/team.js';
 import userRoutes from './routes/user.js';
+import shareRoutes from './routes/share.js';
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/exam', examRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/user', userRoutes);
+app.use('/share', shareRoutes); // Social Share Routes
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -21,6 +21,7 @@ import Recruit from './pages/Recruit';
 import Inginiux from './pages/Inginiux';
 import Exam from './pages/Exam';
 import Admin from './pages/Admin';
+import MegaEvent from './pages/MegaEvent';
 
 // Scroll to top component
 const ScrollToTop = () => {
@@ -48,6 +49,7 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/inginiux" element={<Inginiux />} />
         <Route path="/exam" element={<Exam />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/:slug" element={<MegaEvent />} />
       </Routes>
     </AnimatePresence>
   );

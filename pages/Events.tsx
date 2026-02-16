@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, MapPin, ArrowRight, X, ChevronRight, Users } from 'lucide-react';
+import { Lock, LogOut, Users, Calendar, MapPin, ChevronRight, X, Phone, User, GraduationCap, Hash, Trophy, Info, ChevronDown, ChevronUp, Share2 } from 'lucide-react';
 import SectionWrapper from '../components/SectionWrapper';
 import { api } from '../lib/api';
 
@@ -41,7 +41,24 @@ const Events: React.FC = () => {
   const rootEvents = events.filter(e => !e.parentId);
   const getSubEvents = (parentId: string) => events.filter(e => e.parentId === parentId);
 
-  const EventCard = ({ event, isSub = false }: { event: any, isSub?: boolean }) => (
+  const handleShare = async (event: any) => {
+    const shareUrl = `${(import.meta as any).env.VITE_API_URL || 'https://ignite-technical-innovation-club.onrender.com'}/share/events/${event._id}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: event.name,
+          text: event.description,
+          url: shareUrl
+        });
+      } catch (err) { console.error('Error sharing:', err); }
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      alert('Link copied to clipboard!');
+    }
+  };
+
+  const EventCard = ({ event, isSub = false }: { event: any, isSub?: boolean, key?: any }) => (
     <motion.div
       layout
       initial={{ opacity: 0, y: 20 }}
@@ -86,23 +103,30 @@ const Events: React.FC = () => {
 
         {event.type === 'mega' ? (
           <div className="space-y-4 mt-6 border-t border-white/10 pt-6">
-            <h5 className="font-bold text-gray-300 uppercase text-xs tracking-wider">Sub Events</h5>
+            <div className="flex justify-between items-center">
+              <h5 className="font-bold text-gray-300 uppercase text-xs tracking-wider">Sub Events</h5>
+              <button onClick={() => handleShare(event)} className="p-2 text-gray-400 hover:text-white bg-white/5 rounded-full hover:bg-white/10 transition-colors">
+                <Share2 className="w-4 h-4" />
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {getSubEvents(event._id).map(sub => <EventCard key={sub._id} event={sub} isSub={true} />)}
               {getSubEvents(event._id).length === 0 && <p className="text-gray-500 text-sm italic">Coming soon...</p>}
             </div>
           </div>
         ) : (
-          <button onClick={() => setSelectedEvent(event)} className="w-full py-3 bg-white/5 border border-white/10 rounded-lg font-medium hover:bg-white/10 hover:border-primary/50 transition-all flex items-center justify-center gap-2 group/btn">
-            Register Now <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setSelectedEvent(event)} className="flex-1 py-3 bg-white/5 border border-white/10 rounded-lg font-medium hover:bg-white/10 hover:border-primary/50 transition-all flex items-center justify-center gap-2 group/btn">
+              Register Now <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+            </button>
+            <button onClick={() => handleShare(event)} className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+              <Share2 className="w-5 h-5" />
+            </button>
+          </div>
         )}
       </div>
     </motion.div>
   );
-
-  // Import Users icon since I used it above
-  const { Users } = require('lucide-react');
 
   return (
     <div className="pt-32 pb-20 min-h-screen">
