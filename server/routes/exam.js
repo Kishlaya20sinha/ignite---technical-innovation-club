@@ -32,6 +32,29 @@ router.post('/questions/bulk', auth, async (req, res) => {
   }
 });
 
+// POST /api/exam/questions/generate — admin: generate with AI
+router.post('/questions/generate', auth, async (req, res) => {
+    try {
+        const { topic, count = 10 } = req.body;
+        if (!process.env.GROQ_API_KEY) return res.status(400).json({ error: 'Groq API Key missing' });
+        
+        const aiQuestions = await generateExamQuestions(topic || 'General Technical Aptitude', count);
+        
+        // Save to DB
+        const savedQuestions = await ExamQuestion.insertMany(aiQuestions.map(q => ({
+            question: q.question,
+            options: q.options,
+            type: q.type || 'mcq',
+            correctAnswer: q.correctAnswer,
+            isActive: true
+        })));
+        
+        res.json({ message: `Generated ${savedQuestions.length} questions`, questions: savedQuestions });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /api/exam/questions/all — admin: all questions with answers
 router.get('/questions/all', auth, async (req, res) => {
   try {
@@ -82,33 +105,13 @@ router.post('/start', async (req, res) => {
       return res.status(400).json({ error: 'You have already submitted the exam.' });
     }
 
-    // Check availability window needed? (Assuming yes from previous steps)
+    // Fetch questions from DB only (Randomized 30)
+    // AI generation removed to prevent rate limits during exam
+    const dbQuestions = await ExamQuestion.find({ isActive: true }).lean();
+    if (dbQuestions.length === 0) return res.status(500).json({ error: 'No questions available. Contact admin.' });
     
-    // --- GENERATE QUESTIONS (GROQ or DB) ---
-    let finalQuestions = [];
-
-    if (process.env.GROQ_API_KEY) {
-        try {
-            // Generate customized paper
-            const aiQuestions = await generateExamQuestions(candidate.domain || 'General', 15);
-            // Map to unified format (handling lack of IDs in AI response)
-            finalQuestions = aiQuestions.map((q, i) => ({
-                _id: new mongoose.Types.ObjectId(),
-                question: q.question,
-                options: q.options || [],
-                type: q.type || 'mcq',
-                correctAnswer: q.correctAnswer
-            }));
-        } catch (e) {
-            console.error("AI Generation failed, falling back to DB", e);
-        }
-    }
-
-    // Fallback if AI failed or Key missing
-    if (finalQuestions.length === 0) {
-        const dbQuestions = await ExamQuestion.find({ isActive: true }).lean();
-        finalQuestions = dbQuestions.sort(() => Math.random() - 0.5);
-    }
+    // Shuffle and pick 30 (or less if not enough)
+    const finalQuestions = dbQuestions.sort(() => Math.random() - 0.5).slice(0, 30);
 
     // Create submission record
     let submission = existing;

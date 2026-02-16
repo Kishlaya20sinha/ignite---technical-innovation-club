@@ -44,12 +44,14 @@ export const api = {
     // Exam
     addQuestion: (data: any) => api.request('/api/exam/questions', { method: 'POST', body: JSON.stringify(data) }),
     addQuestionsBulk: (questions: any[]) => api.request('/api/exam/questions/bulk', { method: 'POST', body: JSON.stringify({ questions }) }),
+    generateQuestions: (topic: string) => api.request('/api/exam/questions/generate', { method: 'POST', body: JSON.stringify({ topic }) }),
     getAllQuestions: () => api.request('/api/exam/questions/all'),
     deleteQuestion: (id: string) => api.request(`/api/exam/questions/${id}`, { method: 'DELETE' }),
     startExam: (data: any) => api.request('/api/exam/start', { method: 'POST', body: JSON.stringify(data) }),
     submitExam: (data: any) => api.request('/api/exam/submit', { method: 'POST', body: JSON.stringify(data) }),
     logViolation: (data: any) => api.request('/api/exam/violation', { method: 'POST', body: JSON.stringify(data) }),
     getSubmissions: () => api.request('/api/exam/submissions'),
+    getActiveExams: () => api.request('/api/exam/active'),
 
     // Team
     getTeam: () => api.request('/api/team'),

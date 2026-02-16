@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Send, CheckCircle, AlertCircle, ArrowRight, Sparkles, Upload, FileText, Check } from 'lucide-react';
 import SectionWrapper from '../components/SectionWrapper';
@@ -9,6 +9,7 @@ const Recruit: React.FC = () => {
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [activeBatches, setActiveBatches] = useState<string[]>([]);
     const [form, setForm] = useState<{
         name: string; email: string; phone: string; rollNo: string; branch: string; batch: string;
         interests: string[]; esportsGame: string;
@@ -20,6 +21,19 @@ const Recruit: React.FC = () => {
         whyJoin: '',
         resume: ''
     });
+
+    useEffect(() => {
+        api.get('/api/config/RECRUITMENT_BATCHES').then(res => {
+            if (res.data) {
+                const batches = String(res.data).split(',').map((b: string) => b.trim()).filter(Boolean);
+                setActiveBatches(batches);
+                if (batches.length === 1) setForm(f => ({ ...f, batch: batches[0] }));
+            } else {
+                // Default fallback if no config
+                setActiveBatches(['2024', '2025', '2026']);
+            }
+        }).catch(() => setActiveBatches(['2024', '2025', '2026']));
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -107,7 +121,7 @@ const Recruit: React.FC = () => {
                 <SectionWrapper>
                     <div className="text-center mb-12">
                         <span className="px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-sm font-medium text-primary uppercase tracking-[0.2em] inline-block mb-6">
-                            <Sparkles className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" /> Recruitment 2025
+                            <Sparkles className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" /> Recruitment {activeBatches.join(' / ') || 'open'}
                         </span>
                         <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">Join IGNITE</h1>
                         <p className="text-gray-400">Be part of the premier tech community at BIT Mesra</p>
@@ -143,6 +157,27 @@ const Recruit: React.FC = () => {
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                             <h3 className="text-xl font-bold mb-4">Academic & Interests</h3>
                             <input name="rollNo" value={form.rollNo} onChange={handleChange} placeholder="Roll Number (e.g., BTECH/15XXX/2X) *" required className={inputClass} />
+
+                            <div className="relative">
+                                {/* Batch Input */}
+                                <input
+                                    name="batch"
+                                    type="number"
+                                    value={form.batch}
+                                    onChange={handleChange}
+                                    placeholder="Batch (e.g. 2025) *"
+                                    required
+                                    className={inputClass}
+                                    min="2020"
+                                    max="2030"
+                                />
+                                {activeBatches.length > 0 && form.batch && !activeBatches.includes(form.batch) && (
+                                    <p className="text-yellow-500 text-xs mt-1 absolute right-2 top-3">
+                                        Note: Active recruitment for {activeBatches.join(', ')}
+                                    </p>
+                                )}
+                            </div>
+
                             <input name="branch" value={form.branch} onChange={handleChange} placeholder="Branch (e.g., CSE OR ECE or BCA) *" required className={inputClass} />
 
                             <div className="space-y-3 pt-2">
