@@ -8,29 +8,10 @@ export function RecruitmentPanel() {
     const [loading, setLoading] = useState(true);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [selectedBatch, setSelectedBatch] = useState<string>('All');
-    const [activeBatchesConfig, setActiveBatchesConfig] = useState('');
 
     useEffect(() => {
         fetchApplications();
-        fetchConfig();
     }, []);
-
-    const fetchConfig = async () => {
-        try {
-            const res = await api.get('/api/config/RECRUITMENT_BATCHES');
-            if (res.data) setActiveBatchesConfig(res.data);
-        } catch (e) { console.error("Failed to fetch config", e); }
-    };
-
-    const saveBatchConfig = async () => {
-        try {
-            await api.request('/api/config', {
-                method: 'POST',
-                body: JSON.stringify({ key: 'RECRUITMENT_BATCHES', value: activeBatchesConfig })
-            });
-            alert("Active batches updated!");
-        } catch (e) { alert("Failed to save config"); }
-    };
 
     const fetchApplications = async () => {
         setLoading(true);
@@ -109,18 +90,10 @@ export function RecruitmentPanel() {
                     <div className="text-2xl font-bold">{applications.filter(a => a.interests.includes('BITP Esports')).length}</div>
                 </div>
 
-                {/* Batch Settings */}
+                {/* Batch Info */}
                 <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
-                    <div className="text-gray-400 text-sm mb-1">Active Batches (Config)</div>
-                    <div className="flex gap-2">
-                        <input
-                            value={activeBatchesConfig}
-                            onChange={(e) => setActiveBatchesConfig(e.target.value)}
-                            placeholder="e.g. 2024, 2025"
-                            className="w-full bg-black/20 border border-white/10 rounded px-2 text-sm text-white"
-                        />
-                        <button onClick={saveBatchConfig} className="bg-primary px-3 py-1 rounded text-xs font-bold hover:bg-primary-dark">Save</button>
-                    </div>
+                    <div className="text-gray-400 text-sm mb-1">Active Batch (Auto)</div>
+                    <div className="text-2xl font-bold">{new Date().getFullYear() - 1}</div>
                 </div>
             </div>
 

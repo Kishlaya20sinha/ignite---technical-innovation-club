@@ -25,6 +25,8 @@ const Exam: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [lastWarningCount, setLastWarningCount] = useState(0);
+    const [lastExtraMinutes, setLastExtraMinutes] = useState(0);
 
     const MAX_VIOLATIONS = 3;
 
@@ -120,11 +122,36 @@ const Exam: React.FC = () => {
         return () => document.removeEventListener('fullscreenchange', handleFullscreen);
     }, [phase, violations, submissionId, autoSubmit]);
 
+    const checkTimeWindow = async () => {
+        try {
+            const config = await api.get('/api/exam/config');
+            const now = new Date();
+            if (config.startTime && new Date(config.startTime) > now) {
+                const startStr = new Date(config.startTime).toLocaleString();
+                setError(`Exam has not started yet. It begins at ${startStr}`);
+                return false;
+            }
+            if (config.endTime && new Date(config.endTime) < now) {
+                setError("Exam has ended. Registrations are closed.");
+                return false;
+            }
+            return true;
+        } catch { return true; } // If config fails, allow entry (graceful degradation)
+    };
+
     const handleStart = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.email) return alert("Please enter email");
+
         setLoading(true);
         setError('');
+
+        const isTimeOk = await checkTimeWindow();
+        if (!isTimeOk) {
+            setLoading(false);
+            return;
+        }
+
         try {
             const res = await api.startExam({ email: form.email });
             setSubmissionId(res.submissionId);
@@ -155,26 +182,36 @@ const Exam: React.FC = () => {
         setLoading(false);
     };
 
-    // Poll for warnings
+    // Poll for warnings and status updates
     useEffect(() => {
         if (!submissionId || phase !== 'exam') return;
 
         const interval = setInterval(async () => {
             try {
-                const res = await api.get(`/exam/status/${submissionId}`);
-                const warnings = res.data.adminWarnings || [];
-                if (warnings.length > 0) {
-                    const lastWarning = warnings[warnings.length - 1];
-                    alert(`⚠️ ADMIN WARNING:\n${lastWarning.message}`);
+                const res = await api.getExamStatus(submissionId);
+                const warnings = res.adminWarnings || [];
+
+                if (warnings.length > lastWarningCount) {
+                    const latest = warnings[warnings.length - 1];
+                    alert(`⚠️ ADMIN WARNING:\n${latest.message}`);
+                    setLastWarningCount(warnings.length);
                 }
-                if (res.data.status === 'submitted' || res.data.status === 'auto-submitted') {
+
+                if (res.extraMinutes > lastExtraMinutes) {
+                    const added = (res.extraMinutes - lastExtraMinutes) * 60;
+                    setTimeLeft(prev => prev + added);
+                    setLastExtraMinutes(res.extraMinutes);
+                    alert(`⏰ EXTRA TIME GRANTED: +${res.extraMinutes - lastExtraMinutes} minutes!`);
+                }
+
+                if (res.status === 'submitted' || res.status === 'auto-submitted') {
                     setPhase('result');
                 }
             } catch (e) { console.error("Poll failed", e); }
-        }, 10000);
+        }, 8000);
 
         return () => clearInterval(interval);
-    }, [submissionId, phase]);
+    }, [submissionId, phase, lastWarningCount]);
 
     if (phase === 'register') {
         return (

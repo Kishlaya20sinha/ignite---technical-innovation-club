@@ -21,6 +21,7 @@ const examSubmissionSchema = new mongoose.Schema({
   submittedAt: { type: Date },
   violations: { type: Number, default: 0 }, // Tab switches, etc.
   violationLog: [{ type: { type: String }, timestamp: Date }],
+  extraMinutes: { type: Number, default: 0 },
   status: { type: String, enum: ['in-progress', 'submitted', 'auto-submitted'], default: 'in-progress' },
 }, { timestamps: true });
 

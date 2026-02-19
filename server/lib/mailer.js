@@ -22,6 +22,7 @@ export const sendEmail = async (to, subject, html) => {
         to,
         subject,
         html,
+        attachments: arguments[3] || []
     };
 
     try {

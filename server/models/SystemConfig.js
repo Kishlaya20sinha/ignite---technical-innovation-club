@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const systemConfigSchema = new mongoose.Schema({
     key: { type: String, required: true, unique: true },
@@ -6,4 +6,4 @@ const systemConfigSchema = new mongoose.Schema({
     lastUpdated: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('SystemConfig', systemConfigSchema);
+export default mongoose.model('SystemConfig', systemConfigSchema);

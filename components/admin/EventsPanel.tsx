@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../lib/api';
 import { motion } from 'framer-motion';
-import { Plus, FileText, ChevronUp, ChevronDown, Eye, Trash2 } from 'lucide-react';
+import { Plus, FileText, ChevronUp, ChevronDown, Eye, Trash2, QrCode, Award } from 'lucide-react';
+import { CertificateEditor } from './CertificateEditor';
 
 export function EventsPanel() {
     const [events, setEvents] = useState<any[]>([]);
@@ -16,6 +17,13 @@ export function EventsPanel() {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [editId, setEditId] = useState<string | null>(null);
     const [expandedMegaId, setExpandedMegaId] = useState<string | null>(null);
+    const [qrModal, setQrModal] = useState<{ show: boolean, qr: string, url: string, name: string }>({ show: false, qr: '', url: '', name: '' });
+    const [certModal, setCertModal] = useState<any>({
+        show: false,
+        eventId: '',
+        name: '',
+        coords: { x: 420, y: 300, size: 40, font: 'Helvetica-Bold', color: '#000000' }
+    });
 
     const load = async () => {
         try {
@@ -25,6 +33,15 @@ export function EventsPanel() {
         } catch { }
     };
     useEffect(() => { load(); }, []);
+
+    // Lock body scroll when modals are open
+    useEffect(() => {
+        if (certModal.show || qrModal.show) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+    }, [certModal.show, qrModal.show]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,19 +66,19 @@ export function EventsPanel() {
                 formData.append('image', imageFile);
             }
 
-            const token = localStorage.getItem('ignite_admin_token');
-            const url = `${(import.meta as any).env?.VITE_API_URL || 'https://ignite-technical-innovation-club.onrender.com'}/api/events${editId ? `/${editId}` : ''}`;
-
-            await fetch(url, {
-                method: editId ? 'PUT' : 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
-            });
+            if (editId) {
+                await api.updateEvent(editId, formData);
+            } else {
+                await api.createEvent(formData);
+            }
 
             setShowForm(false);
             resetForm();
             load();
-        } catch (err) { console.error(err); }
+        } catch (err: any) {
+            console.error(err);
+            alert(err.message || 'Failed to save event');
+        }
     };
 
     const resetForm = () => {
@@ -215,6 +232,30 @@ export function EventsPanel() {
                                                 {expandedMegaId === event._id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                             </button>
                                         )}
+                                        <button
+                                            onClick={() => {
+                                                setCertModal({
+                                                    show: true,
+                                                    eventId: event._id,
+                                                    name: event.name,
+                                                    coords: event.certificateCoords?.name || { x: 420, y: 300, size: 40 }
+                                                });
+                                            }}
+                                            className="p-1.5 text-yellow-400 hover:text-yellow-300" title="Certificates"
+                                        >
+                                            <Award className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const res = await api.getEventQR(event._id);
+                                                    setQrModal({ show: true, ...res, name: event.name });
+                                                } catch (e: any) { alert(e.message); }
+                                            }}
+                                            className="p-1.5 text-purple-400 hover:text-purple-300" title="Attendance QR"
+                                        >
+                                            <QrCode className="w-4 h-4" />
+                                        </button>
                                         <button onClick={() => setShowRegs(showRegs === event._id ? null : event._id)}
                                             className="text-xs px-3 py-1.5 border border-white/10 rounded-lg text-gray-400 hover:text-white flex items-center gap-1">
                                             <Eye className="w-3 h-3" /> {eventRegs.length}
@@ -277,6 +318,34 @@ export function EventsPanel() {
                     );
                 })}
             </div>
+            {/* QR Modal */}
+            {qrModal.show && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setQrModal({ ...qrModal, show: false })} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-dark-paper border border-white/10 p-8 rounded-3xl max-w-sm w-full text-center">
+                        <h3 className="text-xl font-bold mb-2">{qrModal.name}</h3>
+                        <p className="text-gray-500 text-sm mb-6">Ask participants to scan this to mark attendance</p>
+                        <div className="bg-white p-4 rounded-2xl mb-6">
+                            <img src={qrModal.qr} alt="Attendance QR" className="w-full h-full" />
+                        </div>
+                        <p className="text-[10px] text-gray-600 break-all mb-6">{qrModal.url}</p>
+                        <button onClick={() => setQrModal({ ...qrModal, show: false })} className="w-full py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
+                            Close
+                        </button>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Certificates Modal (Canva-style) */}
+            <CertificateEditor
+                show={certModal.show}
+                eventId={certModal.eventId}
+                eventName={certModal.name}
+                initialCoords={certModal.coords}
+                participantCount={registrations.filter(r => (r.eventId?._id === certModal.eventId || r.eventId === certModal.eventId) && r.attended).length}
+                onClose={() => setCertModal({ ...certModal, show: false })}
+                onUploadSuccess={load}
+            />
         </div>
     );
 }

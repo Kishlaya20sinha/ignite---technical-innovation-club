@@ -6,8 +6,11 @@ import { RecruitmentPanel } from '../components/admin/RecruitmentPanel';
 import { EventsPanel } from '../components/admin/EventsPanel';
 import { ExamPanel } from '../components/admin/ExamPanel';
 import { TeamPanel } from '../components/admin/TeamPanel';
+import { GalleryPanel } from '../components/admin/GalleryPanel';
+import { UsersPanel } from '../components/admin/UsersPanel';
+import { Image as ImageIcon } from 'lucide-react';
 
-type Tab = 'recruitment' | 'events' | 'exam' | 'team';
+type Tab = 'recruitment' | 'events' | 'exam' | 'team' | 'gallery' | 'users';
 
 const Admin: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -26,7 +29,7 @@ const Admin: React.FC = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const { token } = await api.login(password);
+            const { token } = await api.login({ email: 'admin', password });
             localStorage.setItem('ignite_admin_token', token);
             setIsLoggedIn(true);
             setLoginError('');
@@ -66,6 +69,8 @@ const Admin: React.FC = () => {
         { id: 'events', label: 'Events', icon: <Calendar className="w-4 h-4" /> },
         { id: 'exam', label: 'Exam', icon: <Brain className="w-4 h-4" /> },
         { id: 'team', label: 'Team', icon: <Users className="w-4 h-4" /> },
+        { id: 'gallery', label: 'Gallery', icon: <ImageIcon className="w-4 h-4" /> },
+        { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
     ];
 
     return (
@@ -97,46 +102,10 @@ const Admin: React.FC = () => {
                     <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                         {activeTab === 'recruitment' && <RecruitmentPanel />}
                         {activeTab === 'events' && <EventsPanel />}
-                        {activeTab === 'exam' && (
-                            <div className="space-y-6">
-                                <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                                    <h2 className="text-xl font-bold mb-4">Exam Access Allowlist</h2>
-                                    <div className="flex gap-4 items-end mb-6">
-                                        <div className="flex-1">
-                                            <label className="text-sm text-gray-400">Name</label>
-                                            <input id="allowName" className="w-full bg-white/5 border border-white/10 rounded p-2 text-white" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <label className="text-sm text-gray-400">Email</label>
-                                            <input id="allowEmail" className="w-full bg-white/5 border border-white/10 rounded p-2 text-white" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <label className="text-sm text-gray-400">Roll No</label>
-                                            <input id="allowRoll" className="w-full bg-white/5 border border-white/10 rounded p-2 text-white" />
-                                        </div>
-                                        <button
-                                            onClick={async () => {
-                                                const name = (document.getElementById('allowName') as HTMLInputElement).value;
-                                                const email = (document.getElementById('allowEmail') as HTMLInputElement).value;
-                                                const rollNo = (document.getElementById('allowRoll') as HTMLInputElement).value;
-                                                if (name && email && rollNo) {
-                                                    try {
-                                                        await api.request('/api/exam/allowlist', { method: 'POST', body: JSON.stringify({ name, email, rollNo }) });
-                                                        alert('User added to allowlist');
-                                                        (document.getElementById('allowName') as HTMLInputElement).value = '';
-                                                        (document.getElementById('allowEmail') as HTMLInputElement).value = '';
-                                                        (document.getElementById('allowRoll') as HTMLInputElement).value = '';
-                                                    } catch (e: any) { alert(e.message); }
-                                                }
-                                            }}
-                                            className="bg-primary px-4 py-2 rounded text-white font-bold"
-                                        >Add User</button>
-                                    </div>
-                                </div>
-                                <ExamPanel />
-                            </div>
-                        )}
+                        {activeTab === 'exam' && <ExamPanel />}
                         {activeTab === 'team' && <TeamPanel />}
+                        {activeTab === 'gallery' && <GalleryPanel />}
+                        {activeTab === 'users' && <UsersPanel />}
                     </motion.div>
                 </AnimatePresence>
             </div>

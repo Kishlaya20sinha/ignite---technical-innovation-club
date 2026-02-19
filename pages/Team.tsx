@@ -2,8 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Linkedin } from 'lucide-react';
 import SectionWrapper from '../components/SectionWrapper';
-import { TEAM_MEMBERS } from '../data';
 import { TeamMember } from '../types';
+import { TEAM_MEMBERS } from '../data';
 
 const TeamCard: React.FC<{ member: TeamMember }> = ({ member }) => {
   return (
@@ -19,7 +19,7 @@ const TeamCard: React.FC<{ member: TeamMember }> = ({ member }) => {
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
 
-          {member.socials.linkedin && member.socials.linkedin !== '#' && (
+          {member.socials?.linkedin && member.socials.linkedin !== '#' && (
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
               <a
                 href={member.socials.linkedin}
@@ -43,19 +43,19 @@ const TeamCard: React.FC<{ member: TeamMember }> = ({ member }) => {
 };
 
 const Team: React.FC = () => {
-  const president = TEAM_MEMBERS.find(m => m.role === 'President');
-  const vicePresidents = TEAM_MEMBERS.filter(m => m.role === 'Vice President');
-  const secretary = TEAM_MEMBERS.find(m => m.role === 'Secretary');
-  const treasurer = TEAM_MEMBERS.find(m => m.role === 'Treasurer');
+  const president = TEAM_MEMBERS.find(m => m.role.toLowerCase() === 'president');
+  const vicePresidents = TEAM_MEMBERS.filter(m => m.role.toLowerCase().includes('vice president'));
+  const secretary = TEAM_MEMBERS.find(m => m.role.toLowerCase() === 'secretary');
+  const treasurer = TEAM_MEMBERS.find(m => m.role.toLowerCase() === 'treasurer');
 
   const coreTeam = TEAM_MEMBERS.filter(
     m =>
-      !['President', 'Vice President', 'Secretary', 'Treasurer', 'Member'].includes(
-        m.role
-      )
+      !['president', 'vice president', 'secretary', 'treasurer', 'member'].includes(
+        m.role.toLowerCase()
+      ) && !m.role.toLowerCase().includes('vice president')
   );
 
-  const members = TEAM_MEMBERS.filter(m => m.role === 'Member');
+  const members = TEAM_MEMBERS.filter(m => m.role.toLowerCase() === 'member');
 
   return (
     <div className="pt-32 pb-20 min-h-screen">
@@ -110,32 +110,36 @@ const Team: React.FC = () => {
         </div>
 
         {/* Core Team */}
-        <div className="mb-20">
-          <h2 className="text-3xl font-display font-bold mb-10 text-center">
-            Core Team
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {coreTeam.map((member, index) => (
-              <SectionWrapper key={member.id} delay={index * 0.08}>
-                <TeamCard member={member} />
-              </SectionWrapper>
-            ))}
+        {coreTeam.length > 0 && (
+          <div className="mb-20">
+            <h2 className="text-3xl font-display font-bold mb-10 text-center">
+              Core Team
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {coreTeam.map((member, index) => (
+                <SectionWrapper key={member.id} delay={index * 0.08}>
+                  <TeamCard member={member} />
+                </SectionWrapper>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Members */}
-        <div>
-          <h2 className="text-3xl font-display font-bold mb-10 text-center">
-            Members
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-            {members.map((member, index) => (
-              <SectionWrapper key={member.id} delay={index * 0.05}>
-                <TeamCard member={member} />
-              </SectionWrapper>
-            ))}
+        {members.length > 0 && (
+          <div>
+            <h2 className="text-3xl font-display font-bold mb-10 text-center">
+              Members
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+              {members.map((member, index) => (
+                <SectionWrapper key={member.id} delay={index * 0.05}>
+                  <TeamCard member={member} />
+                </SectionWrapper>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>

@@ -22,6 +22,10 @@ import Inginiux from './pages/Inginiux';
 import Exam from './pages/Exam';
 import Admin from './pages/Admin';
 import MegaEvent from './pages/MegaEvent';
+import Profile from './pages/Profile';
+import Attend from './pages/Attend';
+import Register from './pages/Register';
+import Login from './pages/Login';
 
 // Scroll to top component
 const ScrollToTop = () => {
@@ -49,26 +53,39 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/inginiux" element={<Inginiux />} />
         <Route path="/exam" element={<Exam />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/attend" element={<Attend />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/:slug" element={<MegaEvent />} />
       </Routes>
     </AnimatePresence>
   );
 };
 
+const AppContents: React.FC = () => {
+  const { pathname } = useLocation();
+  const hideNav = pathname === '/exam';
+
+  return (
+    <div className="bg-dark text-white min-h-screen selection:bg-primary selection:text-white">
+      <Cursor />
+      <AnimatedBackground />
+      {!hideNav && <Navbar />}
+      <ScrollToTop />
+      <main>
+        <AnimatedRoutes />
+      </main>
+      {!hideNav && <Footer />}
+      <Analytics />
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <Router>
-      <div className="bg-dark text-white min-h-screen selection:bg-primary selection:text-white">
-        <Cursor />
-        <AnimatedBackground />
-        <Navbar />
-        <ScrollToTop />
-        <main>
-          <AnimatedRoutes />
-        </main>
-        <Footer />
-        <Analytics />
-      </div>
+      <AppContents />
     </Router>
   );
 };

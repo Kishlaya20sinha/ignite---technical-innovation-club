@@ -45,7 +45,7 @@ const Cursor: React.FC = () => {
       y: mousePosition.y - 20,
       height: 40,
       width: 40,
-      backgroundColor: "transparent",
+      backgroundColor: "rgba(249, 115, 22, 0)",
       border: "1px solid rgba(249, 115, 22, 0.5)",
     },
     text: {

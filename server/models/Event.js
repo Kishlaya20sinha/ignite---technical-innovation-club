@@ -15,6 +15,17 @@ const eventSchema = new mongoose.Schema({
   registrationsOpen: { type: Boolean, default: true },
   status: { type: String, enum: ['upcoming', 'live', 'ended'], default: 'upcoming' },
   isFeatured: { type: Boolean, default: false },
+  reminderSent: { type: Boolean, default: false },
+  certificateTemplate: { type: String }, // Path to PDF template
+  certificateCoords: {
+    name: {
+        x: { type: Number, default: 300 },
+        y: { type: Number, default: 400 },
+        size: { type: Number, default: 40 },
+        color: { type: String, default: '#000000' },
+        font: { type: String, default: 'Helvetica-Bold' },
+    }
+  }
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
 eventSchema.virtual('subEvents', {

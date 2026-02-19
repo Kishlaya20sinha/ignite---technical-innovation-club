@@ -9,6 +9,7 @@ const eventRegistrationSchema = new mongoose.Schema({
   branch: { type: String },
   teamName: { type: String },
   teamMembers: [{ name: String, rollNo: String, email: String }],
+  attended: { type: Boolean, default: false },
 }, { timestamps: true });
 
 eventRegistrationSchema.index({ eventId: 1, email: 1 }, { unique: true });

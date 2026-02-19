@@ -3,11 +3,40 @@ import ExamQuestion from '../models/ExamQuestion.js';
 import ExamSubmission from '../models/ExamSubmission.js';
 import Recruitment from '../models/Recruitment.js';
 import ExamAllowlist from '../models/ExamAllowlist.js';
+import SystemConfig from '../models/SystemConfig.js';
 import auth from '../middleware/auth.js';
 import { generateExamQuestions } from '../lib/groq.js';
 import mongoose from 'mongoose';
 
 const router = express.Router();
+
+// ===== EXAM CONFIG (Settings) =====
+
+// GET /api/exam/config — public/admin: get exam window
+router.get('/config', async (req, res) => {
+    try {
+        const startTime = await SystemConfig.findOne({ key: 'exam_start' });
+        const endTime = await SystemConfig.findOne({ key: 'exam_end' });
+        res.json({
+            startTime: startTime?.value,
+            endTime: endTime?.value
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/exam/config — admin: set exam window
+router.post('/config', auth, async (req, res) => {
+    try {
+        const { startTime, endTime } = req.body;
+        if (startTime) await SystemConfig.findOneAndUpdate({ key: 'exam_start' }, { value: startTime }, { upsert: true });
+        if (endTime) await SystemConfig.findOneAndUpdate({ key: 'exam_end' }, { value: endTime }, { upsert: true });
+        res.json({ message: 'Exam configuration updated' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
 
 // ===== EXAM QUESTIONS (Admin) =====
 
@@ -62,6 +91,16 @@ router.get('/questions/all', auth, async (req, res) => {
     res.json(questions);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/exam/questions/:id — admin: update question
+router.put('/questions/:id', auth, async (req, res) => {
+  try {
+    const question = await ExamQuestion.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(question);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 
@@ -251,7 +290,7 @@ router.post('/warning', auth, async (req, res) => {
 // GET /api/exam/status/:submissionId — student: poll for warnings/status
 router.get('/status/:submissionId', async (req, res) => {
     try {
-        const submission = await ExamSubmission.findById(req.params.submissionId).select('status adminWarnings');
+        const submission = await ExamSubmission.findById(req.params.submissionId).select('status adminWarnings extraMinutes');
         if (!submission) return res.status(404).json({ error: 'Not found' });
         res.json(submission);
     } catch (err) {
@@ -290,6 +329,35 @@ router.get('/submissions', auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// POST /api/exam/add-time — admin: grant extra time
+router.post('/add-time', auth, async (req, res) => {
+    try {
+        const { submissionId, minutes } = req.body;
+        const submission = await ExamSubmission.findByIdAndUpdate(
+            submissionId, 
+            { $inc: { extraMinutes: Number(minutes) } },
+            { new: true }
+        );
+        res.json({ message: `Added ${minutes} minutes. Total extra: ${submission.extraMinutes}`, extraMinutes: submission.extraMinutes });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// POST /api/exam/add-time-all — admin: grant extra time to all active
+router.post('/add-time-all', auth, async (req, res) => {
+    try {
+        const { minutes } = req.body;
+        const result = await ExamSubmission.updateMany(
+            { status: 'in-progress' },
+            { $inc: { extraMinutes: Number(minutes) } }
+        );
+        res.json({ message: `Added ${minutes} minutes to ${result.modifiedCount} active sessions.` });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 export default router;

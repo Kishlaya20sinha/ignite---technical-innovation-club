@@ -170,4 +170,210 @@ router.get('/registrations/:eventId', auth, async (req, res) => {
   }
 });
 
+import QRCode from 'qrcode';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+
+// GET /api/events/:id/qr — admin: get QR code for attendance
+router.get('/:id/qr', auth, async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+        if (!event) return res.status(404).json({ error: 'Event not found' });
+
+        const url = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/attend?event=${event._id}`;
+        const qrImage = await QRCode.toDataURL(url);
+        res.json({ qr: qrImage, url });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/events/attend — public: mark attendance
+router.post('/attend', async (req, res) => {
+    try {
+        const { eventId, email } = req.body;
+        const registration = await EventRegistration.findOne({ eventId, email: email.toLowerCase().trim() });
+        
+        if (!registration) {
+            return res.status(404).json({ error: 'Registration not found for this email.' });
+        }
+
+        if (registration.attended) {
+            return res.json({ message: 'Attendance already marked!', registration });
+        }
+
+        registration.attended = true;
+        await registration.save();
+        res.json({ message: 'Attendance marked successfully!', registration });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// POST /api/events/:id/certificate-template — admin: upload PDF template
+router.post('/:id/certificate-template', auth, upload.single('template'), async (req, res) => {
+    try {
+        let updateData = {};
+        if (req.file) {
+            const dir = 'uploads/templates/';
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            const filename = `template_${req.params.id}_${Date.now()}.pdf`;
+            const filepath = path.join(dir, filename);
+            fs.writeFileSync(filepath, req.file.buffer);
+            updateData.certificateTemplate = `/${filepath}`;
+        }
+        
+        if (req.body.coords) {
+            updateData.certificateCoords = JSON.parse(req.body.coords);
+        }
+
+        const event = await Event.findByIdAndUpdate(req.params.id, updateData, { new: true });
+        res.json(event);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// GET /api/events/:id/certificate-preview — admin: preview certificate
+router.get('/:id/certificate-preview', auth, async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+        if (!event) return res.status(404).json({ error: 'Event not found' });
+
+        let pdfDoc;
+        if (event.certificateTemplate) {
+            const templatePath = path.join(process.cwd(), event.certificateTemplate.startsWith('/') ? event.certificateTemplate.slice(1) : event.certificateTemplate);
+            const templateBytes = fs.readFileSync(templatePath);
+            pdfDoc = await PDFDocument.load(templateBytes);
+        } else {
+            // Create a basic template if none exists
+            pdfDoc = await PDFDocument.create();
+            const page = pdfDoc.addPage([841.89, 595.28]); // A4 Landscape
+            page.drawRectangle({
+                x: 20, y: 20, width: 801.89, height: 555.28,
+                borderColor: rgb(0.97, 0.45, 0.08), borderWidth: 4
+            });
+        }
+
+        const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
+        
+        // Map fonts
+        const fontMap = {
+            'Helvetica': StandardFonts.Helvetica,
+            'Helvetica-Bold': StandardFonts.HelveticaBold,
+            'Times-Roman': StandardFonts.TimesRoman,
+            'Times-Bold': StandardFonts.TimesRomanBold,
+            'Courier': StandardFonts.Courier,
+            'Courier-Bold': StandardFonts.CourierBold
+        };
+        const selectedFont = fontMap[event.certificateCoords?.name?.font] || StandardFonts.HelveticaBold;
+        const font = await pdfDoc.embedFont(selectedFont);
+        
+        const coords = event.certificateCoords?.name || { x: 420, y: 300, size: 40, color: '#000000' };
+        
+        // Convert hex to RGB
+        const hexToRgb = (hex) => {
+            const r = parseInt(hex.slice(1, 3), 16) / 255;
+            const g = parseInt(hex.slice(3, 5), 16) / 255;
+            const b = parseInt(hex.slice(5, 7), 16) / 255;
+            return rgb(r, g, b);
+        };
+        const color = hexToRgb(coords.color || '#000000');
+        const text = 'SAMPLE STUDENT NAME';
+        const width = font.widthOfTextAtSize(text, coords.size || 40);
+        
+        // Draw dummy name for preview - centered
+        firstPage.drawText(text, {
+            x: coords.x - width / 2,
+            y: coords.y - (coords.size || 40) / 2, // Half-size subtraction for better centering math
+            size: coords.size || 40,
+            font: font,
+            color: color,
+        });
+
+        const pdfBase64 = await pdfDoc.saveAsBase64({ dataUri: true });
+        res.json({ pdf: pdfBase64 });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/events/:id/generate-certificates — admin: email all certificates
+router.post('/:id/generate-certificates', auth, async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+        if (!event) return res.status(404).json({ error: 'Event not found' });
+        if (!event.certificateTemplate) return res.status(400).json({ error: 'No template uploaded for this event.' });
+
+        const registrations = await EventRegistration.find({ eventId: event._id, attended: true });
+        if (registrations.length === 0) return res.status(400).json({ error: 'No participants have marked attendance for this event yet.' });
+        const templatePath = path.join(process.cwd(), event.certificateTemplate.slice(1));
+        const templateBytes = fs.readFileSync(templatePath);
+
+        const fontMap = {
+            'Helvetica': StandardFonts.Helvetica,
+            'Helvetica-Bold': StandardFonts.HelveticaBold,
+            'Times-Roman': StandardFonts.TimesRoman,
+            'Times-Bold': StandardFonts.TimesRomanBold,
+            'Courier': StandardFonts.Courier,
+            'Courier-Bold': StandardFonts.CourierBold
+        };
+        const selectedFont = fontMap[event.certificateCoords?.name?.font] || StandardFonts.HelveticaBold;
+
+        const hexToRgb = (hex) => {
+            const r = parseInt(hex.slice(1, 3), 16) / 255;
+            const g = parseInt(hex.slice(3, 5), 16) / 255;
+            const b = parseInt(hex.slice(5, 7), 16) / 255;
+            return rgb(r, g, b);
+        };
+        const coords = event.certificateCoords?.name || { x: 420, y: 300, size: 40, color: '#000000' };
+        const color = hexToRgb(coords.color || '#000000');
+
+        let count = 0;
+        for (const reg of registrations) {
+            const pdfDoc = await PDFDocument.load(templateBytes);
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
+            const font = await pdfDoc.embedFont(selectedFont);
+            
+            const text = reg.name.toUpperCase();
+            const width = font.widthOfTextAtSize(text, coords.size || 40);
+            
+            firstPage.drawText(text, {
+                x: coords.x - width / 2,
+                y: coords.y - (coords.size || 40) / 2, // Half-size subtraction for better centering math
+                size: coords.size || 40,
+                font: font,
+                color: color,
+            });
+
+            const pdfBytes = await pdfDoc.save();
+            
+            await sendEmail(
+                reg.email,
+                `Certificate of Achievement: ${event.name}`,
+                `
+                <div style="font-family: sans-serif; color: #333;">
+                    <h2 style="color: #f97316;">Congratulations!</h2>
+                    <p>Hi <strong>${reg.name}</strong>,</p>
+                    <p>Please find attached your digital certificate for participating in <strong>${event.name}</strong>.</p>
+                    <p>Keep burning bright!</p>
+                    <br/>
+                    <p>Best Regards,<br/><strong>Team IGNITE</strong></p>
+                </div>
+                `,
+                [{
+                    filename: `Certificate_${reg.name.replace(/\s+/g, '_')}.pdf`,
+                    content: Buffer.from(pdfBytes)
+                }]
+            );
+            count++;
+        }
+
+        res.json({ message: `Successfully generated and emailed ${count} certificates.` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 export default router;

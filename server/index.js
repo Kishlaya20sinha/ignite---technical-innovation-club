@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import connectDB from './db.js';
+import startScheduler from './lib/scheduler.js';
 
 // Route imports
 import authRoutes from './routes/auth.js';
@@ -14,6 +15,8 @@ import teamRoutes from './routes/team.js';
 import userRoutes from './routes/user.js';
 import configRoutes from './routes/config.js';
 import shareRoutes from './routes/share.js';
+import galleryRoutes from './routes/gallery.js';
+import adminUsersRoutes from './routes/adminUsers.js';
 
 dotenv.config();
 
@@ -36,6 +39,8 @@ app.use('/api/exam', examRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/gallery', galleryRoutes);
+app.use('/api/admin', adminUsersRoutes);
 app.use('/share', shareRoutes); // Social Share Routes
 
 // Health check
@@ -45,6 +50,7 @@ app.get('/api/health', (req, res) => {
 
 // Connect to DB and start server
 connectDB().then(() => {
+  startScheduler();
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
   });

@@ -54,6 +54,15 @@ const Navbar: React.FC = () => {
     return `/${lowerName.replace(/\s+/g, '-')}`;
   };
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('ignite_admin_token');
+    if (token) {
+      api.verifyToken().then(res => setIsLoggedIn(res.valid)).catch(() => setIsLoggedIn(false));
+    }
+  }, [location]);
+
   const navItems = [
     { label: 'Home', path: '/' },
     { label: 'Team', path: '/team' },
@@ -67,6 +76,9 @@ const Navbar: React.FC = () => {
       path: getEventPath(e.name),
       featured: true
     })),
+    // Auth logic
+    { label: isLoggedIn ? 'Profile' : 'Register', path: isLoggedIn ? '/profile' : '/register' },
+    ...(!isLoggedIn ? [{ label: 'Login', path: '/login' }] : []),
     { label: 'Contact', path: '/contact' },
   ];
 

@@ -23,16 +23,11 @@ const Recruit: React.FC = () => {
     });
 
     useEffect(() => {
-        api.get('/api/config/RECRUITMENT_BATCHES').then(res => {
-            if (res.data) {
-                const batches = String(res.data).split(',').map((b: string) => b.trim()).filter(Boolean);
-                setActiveBatches(batches);
-                if (batches.length === 1) setForm(f => ({ ...f, batch: batches[0] }));
-            } else {
-                // Default fallback if no config
-                setActiveBatches(['2024', '2025', '2026']);
-            }
-        }).catch(() => setActiveBatches(['2024', '2025', '2026']));
+        // Auto-set batch to Current Year - 1
+        const currentYear = new Date().getFullYear();
+        const targetBatch = (currentYear - 1).toString();
+        setForm(f => ({ ...f, batch: targetBatch }));
+        setActiveBatches([targetBatch]);
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -63,37 +58,7 @@ const Recruit: React.FC = () => {
         setError('');
 
         try {
-            const formData = new FormData();
-            Object.entries(form).forEach(([key, value]) => {
-                if (key === 'interests') {
-                    // Send interests as individual entries or handled by backend as array
-                    (value as string[]).forEach(interest => formData.append('interests[]', interest)); // Matches common array handling
-                    // Also simple append mostly works with multiple values for same key
-                    // But let's append each one. Express urlencoded extended handles this, multer handles fields.
-                    // For multer/body-parser to see it as array, usually repeating name works.
-                    // Let's just append normally.
-                } else if (key === 'resume' && value) {
-                    formData.append('resume', value as File);
-                } else if (value !== null && value !== undefined && key !== 'interests') {
-                    formData.append(key, value as string);
-                }
-            });
-            // Fix: Re-appending interests correctly for Express/Multer if needed, 
-            // but formData.append('interests', 'val1'); formData.append('interests', 'val2') creates an array.
-            // Let's clear previous loop logic and do it cleanly.
-
-            const finalFormData = new FormData();
-            Object.entries(form).forEach(([key, value]) => {
-                if (key === 'interests') {
-                    (value as string[]).forEach(v => finalFormData.append('interests', v));
-                } else if (key === 'resume') {
-                    if (value) finalFormData.append('resume', value as File);
-                } else {
-                    finalFormData.append(key, value as string);
-                }
-            });
-
-            await api.submitApplication(finalFormData);
+            await api.submitApplication(form);
             setSubmitted(true);
         } catch (err: any) {
             setError(err.message);
@@ -164,18 +129,12 @@ const Recruit: React.FC = () => {
                                     name="batch"
                                     type="number"
                                     value={form.batch}
-                                    onChange={handleChange}
-                                    placeholder="Batch (e.g. 2025) *"
-                                    required
-                                    className={inputClass}
-                                    min="2020"
-                                    max="2030"
+                                    readOnly
+                                    className={`${inputClass} opacity-50 cursor-not-allowed`}
                                 />
-                                {activeBatches.length > 0 && form.batch && !activeBatches.includes(form.batch) && (
-                                    <p className="text-yellow-500 text-xs mt-1 absolute right-2 top-3">
-                                        Note: Active recruitment for {activeBatches.join(', ')}
-                                    </p>
-                                )}
+                                <p className="text-gray-500 text-xs mt-1 absolute right-2 top-3">
+                                    Auto-set for {new Date().getFullYear() - 1} Batch
+                                </p>
                             </div>
 
                             <input name="branch" value={form.branch} onChange={handleChange} placeholder="Branch (e.g., CSE OR ECE or BCA) *" required className={inputClass} />
