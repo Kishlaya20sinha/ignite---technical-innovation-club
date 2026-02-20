@@ -6,7 +6,14 @@ import path from 'path';
 import fs from 'fs';
 import sharp from 'sharp';
 
+import { fileURLToPath } from 'url';
+
 const router = express.Router();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Point to server/uploads/gallery
+const UPLOADS_PATH = path.join(__dirname, '..', 'uploads', 'gallery');
 
 // Multer Config (Memory Storage for Sharp processing)
 const storage = multer.memoryStorage();
@@ -14,18 +21,17 @@ const upload = multer({ storage });
 
 // Helper to process and save image
 const saveImage = async (buffer) => {
-    const dir = 'uploads/gallery/';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(UPLOADS_PATH)) fs.mkdirSync(UPLOADS_PATH, { recursive: true });
     
     const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}.jpeg`;
-    const filepath = path.join(dir, filename);
+    const filepath = path.join(UPLOADS_PATH, filename);
     
     await sharp(buffer)
         .resize(1200, 900, { fit: 'inside', withoutEnlargement: true })
         .jpeg({ quality: 80 })
         .toFile(filepath);
         
-    return `/${dir}${filename}`;
+    return `/uploads/gallery/${filename}`;
 };
 
 // GET /api/gallery — public: list gallery items
