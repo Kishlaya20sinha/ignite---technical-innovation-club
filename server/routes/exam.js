@@ -124,16 +124,12 @@ router.post('/start', async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // 1. Check if user applied for recruitment
+    // 1. Check if user applied for recruitment or is in allowlist
     let candidate = await Recruitment.findOne({ email: normalizedEmail });
-    
-    // 2. If not in recruitment, check Allowlist
-    if (!candidate) {
-        candidate = await ExamAllowlist.findOne({ email: normalizedEmail });
-    }
+    if (!candidate) candidate = await ExamAllowlist.findOne({ email: normalizedEmail });
 
     if (!candidate) {
-        return res.status(403).json({ error: 'You are not registered for the exam. Access denied.' });
+        return res.status(403).json({ error: 'You are not registered for the exam.' });
     }
 
     const { name, rollNo } = candidate;
@@ -144,21 +140,45 @@ router.post('/start', async (req, res) => {
       return res.status(400).json({ error: 'You have already submitted the exam.' });
     }
 
-    // Fetch questions from DB only (Randomized 30)
-    // AI generation removed to prevent rate limits during exam
-    const dbQuestions = await ExamQuestion.find({ isActive: true }).lean();
-    if (dbQuestions.length === 0) return res.status(500).json({ error: 'No questions available. Contact admin.' });
-    
-    // Shuffle and pick 30 (or less if not enough)
-    const finalQuestions = dbQuestions.sort(() => Math.random() - 0.5).slice(0, 30);
+    // Distribution: 5 Easy, 8 Medium, 7 Hard (Total 20)
+    const easyQ = await ExamQuestion.find({ difficulty: 'easy', isActive: true }).lean();
+    const medQ = await ExamQuestion.find({ difficulty: 'medium', isActive: true }).lean();
+    const hardQ = await ExamQuestion.find({ difficulty: 'hard', isActive: true }).lean();
 
-    // Create submission record
+    if (easyQ.length < 5 || medQ.length < 8 || hardQ.length < 7) {
+        return res.status(500).json({ error: 'Insufficient questions in bank. Please contact admin.' });
+    }
+
+    const shuffle = (array) => array.sort(() => Math.random() - 0.5);
+
+    const pickedEasy = shuffle(easyQ).slice(0, 5);
+    const pickedMed = shuffle(medQ).slice(0, 8);
+    const pickedHard = shuffle(hardQ).slice(0, 7);
+
+    let finalQuestions = shuffle([...pickedEasy, ...pickedMed, ...pickedHard]);
+
+    // Anti-Neighbor: Shuffle options within each question
+    finalQuestions = finalQuestions.map(q => {
+        const originalOptionsWithIndex = q.options.map((opt, i) => ({ opt, i }));
+        const shuffled = shuffle([...originalOptionsWithIndex]);
+        
+        // Find where the correct answer index moved to
+        const newCorrectIdx = shuffled.findIndex(s => s.i === q.correctAnswer);
+        
+        return {
+            ...q,
+            options: shuffled.map(s => s.opt),
+            correctAnswer: newCorrectIdx // Save this for grading
+        };
+    });
+
+    // Create or Resume submission
     let submission = existing;
     if (!submission) {
         submission = new ExamSubmission({
             name, 
             email: normalizedEmail, 
-            rollNo: rollNo || 'N/A', // Handle case where allowlist might miss rollNo if loose schema
+            rollNo: rollNo || 'N/A',
             startedAt: new Date(),
             totalQuestions: finalQuestions.length,
             questionSnapshot: finalQuestions 
@@ -166,25 +186,22 @@ router.post('/start', async (req, res) => {
         await submission.save();
     }
 
-    // Return questions WITHOUT answers
+    // Client-safe questions (ID, Text, Options only)
     const clientQuestions = finalQuestions.map(q => ({
         _id: q._id,
         question: q.question,
         options: q.options,
-        type: q.type
+        type: 'mcq'
     }));
 
     res.json({
         submissionId: submission._id,
         questions: clientQuestions,
         startedAt: submission.startedAt,
-        timeLimit: 30, // minutes
-        candidateName: name // Send back name for UI welcome
+        timeLimit: 30, // 30 Minutes
+        candidateName: name
     });
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({ error: 'DB Error: Duplicate entry.' });
-    }
     res.status(400).json({ error: err.message });
   }
 });
@@ -358,6 +375,106 @@ router.post('/add-time-all', auth, async (req, res) => {
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
+});
+
+// POST /api/exam/force-submit — admin: Forcefully submit a student's exam
+router.post('/force-submit', auth, async (req, res) => {
+  try {
+    const { submissionId } = req.body;
+    const submission = await ExamSubmission.findById(submissionId);
+    if (!submission) return res.status(404).json({ error: 'Submission not found' });
+    if (submission.status !== 'in-progress') return res.status(400).json({ error: 'Exam already submitted' });
+
+    // Grade current answers
+    let score = 0;
+    const snapshot = submission.questionSnapshot || [];
+    const answers = submission.answers || [];
+
+    snapshot.forEach(q => {
+        const userAnswer = answers.find(a => a.questionId.toString() === q._id.toString())?.selectedAnswer;
+        if (q.type === 'mcq' && userAnswer === q.correctAnswer) {
+            score++;
+        } else if (q.type === 'input' && String(userAnswer).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()) {
+            score++;
+        }
+    });
+
+    submission.score = score;
+    submission.totalQuestions = snapshot.length;
+    submission.submittedAt = new Date();
+    submission.status = 'auto-submitted'; // Marked as auto to differentiate
+    await submission.save();
+
+    res.json({ message: 'Exam forcefully submitted', score, total: snapshot.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/exam/update-answers — student: Periodic sync of answers
+router.post('/update-answers', async (req, res) => {
+  try {
+    const { submissionId, answers } = req.body;
+    await ExamSubmission.findByIdAndUpdate(submissionId, { answers });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/exam/questions/bulk — admin: bulk upload MCQ questions
+router.post('/questions/bulk', auth, async (req, res) => {
+  try {
+    const { questions } = req.body;
+    if (!Array.isArray(questions)) return res.status(400).json({ error: 'Expected an array of questions' });
+
+    const formatted = questions.map(q => ({
+      question: q.question,
+      options: q.options,
+      correctAnswer: q.correctAnswer,
+      difficulty: q.difficulty || 'medium',
+      type: 'mcq',
+      isActive: true
+    }));
+
+    await ExamQuestion.insertMany(formatted);
+    res.json({ message: `Successfully imported ${formatted.length} questions.` });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET /api/exam/export — admin: Export results to CSV
+router.get('/export', auth, async (req, res) => {
+  try {
+    const submissions = await ExamSubmission.find().sort({ score: -1, submittedAt: 1 }).lean();
+    
+    // Create CSV Header
+    let csv = 'Rank,Name,Email,Roll No,Score,Total,Status,Violations,Date,Time\n';
+    
+    submissions.forEach((s, i) => {
+      const date = s.submittedAt ? new Date(s.submittedAt) : null;
+      const dateStr = date ? date.toLocaleDateString() : 'N/A';
+      const timeStr = date ? date.toLocaleTimeString() : 'N/A';
+      csv += `${i + 1},"${s.name}","${s.email}","${s.rollNo}",${s.score},${s.totalQuestions},"${s.status}",${s.violations},"${dateStr}","${timeStr}"\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=recruitment_exam_results.csv');
+    res.status(200).send(csv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/exam/reset-all — admin: Wipe all submissions
+router.delete('/reset-all', auth, async (req, res) => {
+  try {
+    const resDelete = await ExamSubmission.deleteMany({});
+    res.json({ message: `Deleted ${resDelete.deletedCount} submissions.` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;

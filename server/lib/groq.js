@@ -15,29 +15,26 @@ export const generateExamQuestions = async (domain = 'General', count = 10) => {
     }
 
     const prompt = `
-    Generate ${count} unique technical aptitude questions for a university technical club recruitment exam.
-    Domain: ${domain} (General Aptitude, Coding Logic, Basic Electronics, etc. mix).
+    Generate ${count} unique Multiple Choice Questions (MCQs) for a technical recruitment exam.
+    Domain: ${domain} (Aptitude, Coding, CS Fundamentals).
+    
+    Difficulty Request: ${domain === 'General' ? 'Mixed' : domain}
     
     Format: JSON Array of objects.
     Each object must have:
     - "question": string
-    - "type": "mcq" or "input" (mix them, mostly mcq)
-    - "options": array of 4 strings (only for mcq, empty for input)
-    - "correctAnswer": number (index 0-3 for mcq) or string key (for input)
+    - "type": "mcq" (always "mcq")
+    - "options": array of exactly 4 strings
+    - "correctAnswer": number (index 0-3)
+    - "difficulty": "easy", "medium", or "hard"
     
-    For "input" type, the question must be answerable with a SINGLE word, number, or short character sequence.
-    - Do NOT ask for full code implementations.
-    - Ask for output of a snippet, time complexity, or a specific keyword.
-    - The "correctAnswer" field for input type must be SHORT (e.g. "O(n)", "15", "stack", "2.5").
-    
-    Ensure questions are challenging but solvable by undergraduates.
-    Return ONLY the valid JSON array, no markdown.
+    Return ONLY valid JSON.
     `;
 
     try {
         const completion = await groq.chat.completions.create({
             messages: [
-                { role: "system", content: "You are an exam question generator JSON API." },
+                { role: "system", content: "You are a recruitment exam MCQ generator. Output only valid JSON arrays." },
                 { role: "user", content: prompt }
             ],
             model: "llama-3.1-8b-instant",
@@ -46,69 +43,20 @@ export const generateExamQuestions = async (domain = 'General', count = 10) => {
         });
 
         const content = completion.choices[0]?.message?.content || '[]';
-        // Clean markdown if present
         const jsonStr = content.replace(/```json/g, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(jsonStr);
 
-        let questions = [];
-        if (Array.isArray(parsed)) questions = parsed;
-        else if (parsed && Array.isArray(parsed.questions)) questions = parsed.questions;
-        else if (parsed && Array.isArray(parsed.data)) questions = parsed.data;
-        else {
-            console.warn('Groq returned non-array:', parsed);
-            return [];
-        }
-
-        // Sanitize questions
-        return questions.map(q => {
-             // Validate and normalize type
-             if (q.type) q.type = q.type.toLowerCase();
-             
-             // Ensure options is an array
-             if (!Array.isArray(q.options)) q.options = [];
-             
-             // Auto-detect type: if no options, it must be input
-             if (q.options.length === 0) q.type = 'input';
-             if (q.type) q.type = q.type.toLowerCase();
-             // Fix correctAnswer if it's a string (e.g. "a", "A" -> 0)
-             if (q.type === 'mcq') {
-                 let originalAnswer = q.correctAnswer;
-                 if (typeof q.correctAnswer === 'string') {
-                     const lower = q.correctAnswer.toLowerCase();
-                     if (lower === 'a') q.correctAnswer = 0;
-                     else if (lower === 'b') q.correctAnswer = 1;
-                     else if (lower === 'c') q.correctAnswer = 2;
-                     else if (lower === 'd') q.correctAnswer = 3;
-                     else q.correctAnswer = parseInt(q.correctAnswer) || 0;
-                 }
-                 // Ensure it is a number. If undefined/null, make it check options or default
-                 if (q.correctAnswer === undefined || q.correctAnswer === null || isNaN(q.correctAnswer)) {
-                     // Try to match the answer string against options if it was a string
-                     const matchIdx = q.options.findIndex(opt => opt.toString().toLowerCase() === String(originalAnswer).toLowerCase());
-                     q.correctAnswer = matchIdx !== -1 ? matchIdx : 0;
-                 } else {
-                     // It is a number, but check bounds
-                     if (q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
-                         // Case: 1-based indexing (e.g. 1-4 instead of 0-3)
-                         if (q.correctAnswer > 0 && q.correctAnswer <= q.options.length) {
-                             q.correctAnswer -= 1;
-                         } else {
-                             // Case: Answer is the value (number) itself, not index
-                             const matchIdx = q.options.findIndex(opt => opt.includes(String(q.correctAnswer)));
-                             q.correctAnswer = matchIdx !== -1 ? matchIdx : 0;
-                         }
-                     }
-                 }
-             } else {
-                 // For input type, handle various AI return formats
-                 if (!q.correctAnswer) {
-                     q.correctAnswer = q.answer || q.key || q.output || "Answer Key";
-                 }
-                 // Ensure it's a string for display consistency
-                 q.correctAnswer = String(q.correctAnswer);
-             }
-             return q;
-        });
+        let questions = Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || []);
+        
+        return questions.map(q => ({
+            question: q.question,
+            type: 'mcq',
+            options: Array.isArray(q.options) ? q.options.slice(0, 4) : ["Option A", "Option B", "Option C", "Option D"],
+            correctAnswer: (typeof q.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer < 4) 
+                ? q.correctAnswer 
+                : 0,
+            difficulty: ['easy', 'medium', 'hard'].includes(q.difficulty?.toLowerCase()) ? q.difficulty.toLowerCase() : 'medium'
+        }));
     } catch (error) {
         console.error('Groq generation error:', error);
         return [];

@@ -21,7 +21,7 @@ const saveImage = async (buffer) => {
     const filepath = path.join(dir, filename);
     
     await sharp(buffer)
-        .resize(1200, 900, { fit: 'inside', withoutEnlargement: true }) // Larger for gallery
+        .resize(1200, 900, { fit: 'inside', withoutEnlargement: true })
         .jpeg({ quality: 80 })
         .toFile(filepath);
         
@@ -39,14 +39,27 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/gallery — admin: add item
-router.post('/', auth, upload.single('image'), async (req, res) => {
+router.post('/', auth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'images', maxCount: 50 }]), async (req, res) => {
     try {
-        const data = req.body;
-        if (req.file) {
-            data.image = await saveImage(req.file.buffer);
-        } else if (!data.image) {
-            return res.status(400).json({ error: 'Image is required' });
+        const data = { ...req.body };
+
+        // 1. Process Cover Image
+        if (req.files['image']) {
+            data.image = await saveImage(req.files['image'][0].buffer);
+        } else if (!data.coverUrl) {
+            return res.status(400).json({ error: 'Please provide a cover image (upload or URL).' });
         }
+
+        // 2. Process Gallery Images (Album)
+        if (req.files['images']) {
+            const galleryPaths = [];
+            for (const file of req.files['images']) {
+                const path = await saveImage(file.buffer);
+                galleryPaths.push(path);
+            }
+            data.images = galleryPaths;
+        }
+
         const item = new Gallery(data);
         await item.save();
         res.status(201).json(item);
@@ -56,12 +69,23 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
 });
 
 // PUT /api/gallery/:id — admin: update item
-router.put('/:id', auth, upload.single('image'), async (req, res) => {
+router.put('/:id', auth, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'images', maxCount: 50 }]), async (req, res) => {
     try {
-        const data = req.body;
-        if (req.file) {
-            data.image = await saveImage(req.file.buffer);
+        const data = { ...req.body };
+
+        if (req.files['image']) {
+            data.image = await saveImage(req.files['image'][0].buffer);
         }
+
+        if (req.files['images']) {
+            const galleryPaths = [];
+            for (const file of req.files['images']) {
+                const path = await saveImage(file.buffer);
+                galleryPaths.push(path);
+            }
+            data.images = galleryPaths;
+        }
+
         const item = await Gallery.findByIdAndUpdate(req.params.id, data, { new: true });
         res.json(item);
     } catch (err) {

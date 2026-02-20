@@ -51,66 +51,96 @@ export const ExamQuestionView: React.FC<ExamQuestionViewProps> = ({
             </div>
 
             {/* Question */}
-            <motion.div key={question._id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="max-w-3xl mx-auto">
-                <h2 className="text-xl font-bold mb-8 leading-relaxed">{question.question}</h2>
-                <div className="space-y-3 mb-8">
-                    {question.type === 'input' ? (
-                        <textarea
-                            value={answers[question._id] || ''}
-                            onChange={(e) => setAnswer(question._id, e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-primary transition-all h-32"
-                            placeholder="Type your answer here..."
-                        />
-                    ) : (
-                        question.options.map((option, i) => (
-                            <button
-                                key={i}
-                                onClick={() => setAnswer(question._id, i)}
-                                className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ${answers[question._id] === i
-                                    ? 'bg-primary/10 border-primary/50 text-white'
-                                    : 'bg-white/[0.02] border-white/5 text-gray-300 hover:border-white/15 hover:bg-white/[0.04]'
-                                    }`}
-                            >
-                                <span className={`inline-block w-8 h-8 rounded-lg text-center leading-8 mr-3 text-sm font-bold ${answers[question._id] === i ? 'bg-primary text-white' : 'bg-white/5 text-gray-500'
-                                    }`}>
-                                    {String.fromCharCode(65 + i)}
-                                </span>
-                                {option}
-                            </button>
-                        ))
-                    )}
+            <motion.div key={question._id} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-4xl mx-auto px-4 py-8 bg-white/[0.02] border border-white/5 rounded-3xl shadow-2xl mb-12">
+                <div className="flex justify-between items-start mb-10 gap-6">
+                    <h2 className="text-2xl font-bold leading-relaxed text-white">
+                        <span className="text-primary mr-3 italic opacity-50"># {currentQ + 1}</span>
+                        {question.question}
+                    </h2>
                 </div>
-            </motion.div>
 
-            {/* Navigation */}
-            <div className="max-w-3xl mx-auto flex justify-between items-center">
-                <button onClick={onPrev} disabled={currentQ === 0}
-                    className="px-5 py-2 border border-white/10 rounded-xl text-sm hover:bg-white/5 disabled:opacity-30 transition-all">
-                    Previous
-                </button>
-
-                {/* Question dots */}
-                <div className="flex gap-1.5 flex-wrap justify-center max-w-xs">
-                    {allQuestions.map((_, i) => (
-                        <button key={i} onClick={() => jumpToQuestion(i)}
-                            className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${i === currentQ ? 'bg-primary text-white' : answers[allQuestions[i]._id] !== undefined ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-white/5 text-gray-500'
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    {question.options.map((option, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setAnswer(question._id, i)}
+                            className={`group relative flex items-center p-6 rounded-2xl border transition-all duration-300 ${answers[question._id] === i
+                                ? 'bg-primary/20 border-primary shadow-[0_0_30px_rgba(var(--primary-rgb),0.1)]'
+                                : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]'
+                                }`}
+                        >
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold mr-4 transition-all duration-300 ${answers[question._id] === i
+                                ? 'bg-primary text-white scale-110 shadow-lg'
+                                : 'bg-white/10 text-gray-500 group-hover:text-gray-300'
                                 }`}>
-                            {i + 1}
+                                {String.fromCharCode(65 + i)}
+                            </div>
+                            <span className={`text-lg transition-colors ${answers[question._id] === i ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                                {option}
+                            </span>
+                            {answers[question._id] === i && (
+                                <motion.div layoutId="selection-glow" className="absolute inset-0 border-2 border-primary rounded-2xl pointer-events-none" />
+                            )}
                         </button>
                     ))}
                 </div>
+            </motion.div>
 
-                {currentQ === totalQ - 1 ? (
-                    <button onClick={onSubmit} disabled={loading}
-                        className="px-5 py-2 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 disabled:opacity-50 transition-all">
-                        Submit Exam
-                    </button>
-                ) : (
-                    <button onClick={onNext}
-                        className="px-5 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-dark transition-all">
-                        Next
-                    </button>
-                )}
+            {/* Navigation & Palette Container */}
+            <div className="max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    {/* Controls */}
+                    <div className="lg:col-span-1 flex flex-col gap-4 order-2 lg:order-1">
+                        <div className="flex justify-between gap-3">
+                            <button onClick={onPrev} disabled={currentQ === 0}
+                                className="flex-1 px-6 py-4 border border-white/10 rounded-2xl text-sm font-bold text-gray-400 hover:bg-white/5 hover:text-white disabled:opacity-20 transition-all">
+                                Previous
+                            </button>
+                            {currentQ === totalQ - 1 ? (
+                                <button onClick={onSubmit} disabled={loading}
+                                    className="flex-1 px-6 py-4 bg-green-600 text-white rounded-2xl text-sm font-extrabold hover:bg-green-700 disabled:opacity-50 transition-all shadow-xl shadow-green-600/20 active:scale-95">
+                                    Final Submit
+                                </button>
+                            ) : (
+                                <button onClick={onNext}
+                                    className="flex-1 px-6 py-4 bg-primary text-white rounded-2xl text-sm font-extrabold hover:bg-primary-dark transition-all shadow-xl shadow-primary/20 active:scale-95">
+                                    Next Question
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Palette */}
+                    <div className="lg:col-span-2 order-1 lg:order-2 bg-white/[0.01] border border-white/5 p-4 rounded-3xl">
+                        <div className="flex items-center justify-between mb-4 px-2">
+                            <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Quick Navigation</span>
+                            <div className="flex gap-4 text-[10px] font-bold">
+                                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary" /> Current</div>
+                                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-green-500/50" /> Answered</div>
+                                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-white/10" /> Pending</div>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {allQuestions.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => jumpToQuestion(i)}
+                                    className={`w-10 h-10 rounded-xl text-xs font-bold transition-all duration-300 relative ${i === currentQ
+                                        ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-110 z-10'
+                                        : answers[allQuestions[i]._id] !== undefined
+                                            ? 'bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20'
+                                            : 'bg-white/5 text-gray-500 border border-white/5 hover:border-white/20 hover:text-gray-300'
+                                        }`}
+                                >
+                                    {i + 1}
+                                    {i === currentQ && (
+                                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

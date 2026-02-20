@@ -9,7 +9,7 @@ const recruitmentSchema = new mongoose.Schema({
   batch: { type: String, default: '2025' },
   interests: [{ type: String, enum: ['Ignite Club', 'BITP Esports'] }],
   esportsGame: { type: String },
-  resume: { type: String, required: true }, // URL to resume
+  resume: { type: String }, // URL to resume (optional)
   whyJoin: { type: String, required: true },
   status: { type: String, enum: ['pending', 'shortlisted', 'rejected', 'accepted'], default: 'pending' },
 }, { timestamps: true });

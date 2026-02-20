@@ -12,7 +12,7 @@ interface Question {
 }
 
 const Exam: React.FC = () => {
-    const [phase, setPhase] = useState<'register' | 'exam' | 'result'>('register');
+    const [phase, setPhase] = useState<'register' | 'instructions' | 'exam' | 'result'>('register');
     const [form, setForm] = useState({ email: '' });
     const [candidateName, setCandidateName] = useState('');
     const [questions, setQuestions] = useState<Question[]>([]);
@@ -30,6 +30,38 @@ const Exam: React.FC = () => {
 
     const MAX_VIOLATIONS = 3;
 
+    // Load progress from localStorage on mount/exam start
+    useEffect(() => {
+        if (phase === 'exam' && submissionId) {
+            const saved = localStorage.getItem(`exam_progress_${submissionId}`);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    setAnswers(parsed.answers || {});
+                    setCurrentQ(parsed.currentQ || 0);
+                } catch (e) { console.error("Restore failed", e); }
+            }
+        }
+    }, [phase, submissionId]);
+
+    // Save progress to localStorage whenever it changes
+    useEffect(() => {
+        if (phase === 'exam' && submissionId) {
+            localStorage.setItem(`exam_progress_${submissionId}`, JSON.stringify({
+                answers,
+                currentQ,
+                timestamp: Date.now()
+            }));
+        }
+    }, [answers, currentQ, phase, submissionId]);
+
+    // Clear localStorage on result
+    useEffect(() => {
+        if (phase === 'result' && submissionId) {
+            localStorage.removeItem(`exam_progress_${submissionId}`);
+        }
+    }, [phase, submissionId]);
+
     // Auto-submit function
     const autoSubmit = useCallback(async () => {
         if (phase !== 'exam') return;
@@ -40,10 +72,11 @@ const Exam: React.FC = () => {
             const result = await api.submitExam({ submissionId, answers: answerArray, autoSubmit: true });
             setScore(result);
             setPhase('result');
+            localStorage.removeItem(`exam_progress_${submissionId}`);
         } catch { }
     }, [answers, submissionId, phase]);
 
-    // Timer
+    // Timer logic
     useEffect(() => {
         if (phase !== 'exam' || timeLeft <= 0) return;
         const interval = setInterval(() => {
@@ -80,7 +113,7 @@ const Exam: React.FC = () => {
         if (phase !== 'exam') return;
         const prevent = (e: Event) => { e.preventDefault(); };
         const preventKeys = (e: KeyboardEvent) => {
-            if (e.ctrlKey && ['c', 'v', 'x', 'a', 'u'].includes(e.key.toLowerCase())) {
+            if (e.ctrlKey && ['c', 'v', 'x', 'a', 'u', 's'].includes(e.key.toLowerCase())) {
                 e.preventDefault();
             }
             if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
@@ -103,9 +136,13 @@ const Exam: React.FC = () => {
         };
     }, [phase]);
 
-    // Fullscreen
+    // Fullscreen logic
     const enterFullscreen = () => {
-        document.documentElement.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => { });
+        const doc = document.documentElement as any;
+        if (doc.requestFullscreen) doc.requestFullscreen();
+        else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+        else if (doc.msRequestFullscreen) doc.msRequestFullscreen();
+        setIsFullscreen(true);
     };
 
     useEffect(() => {
@@ -119,7 +156,11 @@ const Exam: React.FC = () => {
             }
         };
         document.addEventListener('fullscreenchange', handleFullscreen);
-        return () => document.removeEventListener('fullscreenchange', handleFullscreen);
+        document.addEventListener('webkitfullscreenchange', handleFullscreen);
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreen);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreen);
+        };
     }, [phase, violations, submissionId, autoSubmit]);
 
     const checkTimeWindow = async () => {
@@ -136,22 +177,23 @@ const Exam: React.FC = () => {
                 return false;
             }
             return true;
-        } catch { return true; } // If config fails, allow entry (graceful degradation)
+        } catch { return true; }
     };
 
-    const handleStart = async (e: React.FormEvent) => {
+    const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.email) return alert("Please enter email");
-
         setLoading(true);
         setError('');
-
         const isTimeOk = await checkTimeWindow();
-        if (!isTimeOk) {
-            setLoading(false);
-            return;
+        if (isTimeOk) {
+            setPhase('instructions');
         }
+        setLoading(false);
+    };
 
+    const handleStart = async () => {
+        setLoading(true);
         try {
             const res = await api.startExam({ email: form.email });
             setSubmissionId(res.submissionId);
@@ -162,11 +204,27 @@ const Exam: React.FC = () => {
             setPhase('exam');
         } catch (err: any) {
             setError(err.message || "Failed to start");
+            setPhase('register');
         }
         setLoading(false);
     };
 
+    // Sync answers to server periodically (for Force Submit accuracy)
+    useEffect(() => {
+        if (phase !== 'exam' || !submissionId) return;
+        const interval = setInterval(async () => {
+            try {
+                const answerArray = Object.entries(answers).map(([questionId, selectedAnswer]) => ({
+                    questionId, selectedAnswer,
+                }));
+                await api.syncAnswers({ submissionId, answers: answerArray });
+            } catch (e) { /* background sync, ignore errors */ }
+        }, 45000); // Sync every 45s
+        return () => clearInterval(interval);
+    }, [answers, phase, submissionId]);
+
     const submitExam = async () => {
+        if (!confirm("Are you sure you want to submit?")) return;
         setLoading(true);
         try {
             const answerArray = Object.entries(answers).map(([questionId, selectedAnswer]) => ({
@@ -175,7 +233,10 @@ const Exam: React.FC = () => {
             const result = await api.submitExam({ submissionId, answers: answerArray, autoSubmit: false });
             setScore(result);
             setPhase('result');
-            document.exitFullscreen?.().catch(() => { });
+            if (document.fullscreenElement) {
+                document.exitFullscreen?.().catch(() => { });
+            }
+            localStorage.removeItem(`exam_progress_${submissionId}`);
         } catch (err: any) {
             setError(err.message);
         }
@@ -218,11 +279,55 @@ const Exam: React.FC = () => {
             <ExamRegister
                 email={form.email}
                 setEmail={e => setForm({ ...form, email: e })}
-                handleStart={handleStart}
+                handleStart={handleRegister}
                 loading={loading}
                 error={error}
                 maxViolations={MAX_VIOLATIONS}
             />
+        );
+    }
+
+    if (phase === 'instructions') {
+        return (
+            <div className="min-h-screen pt-24 pb-20 flex items-center justify-center">
+                <div className="max-w-2xl w-full mx-auto px-6">
+                    <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-8 md:p-12 shadow-2xl">
+                        <h2 className="text-3xl font-display font-bold mb-6 text-white">Exam Instructions</h2>
+                        <ul className="space-y-4 text-gray-400 text-sm mb-8">
+                            <li className="flex gap-3">
+                                <span className="bg-primary/20 text-primary w-6 h-6 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                                <p>This exam consists of <strong>20 Multiple Choice Questions</strong> (5 Easy, 8 Medium, 7 Hard). Total time: <strong>30 Minutes</strong>.</p>
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="bg-primary/20 text-primary w-6 h-6 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                                <p><strong>Real-time proctoring is enabled</strong>. Switching tabs, minimizing the browser, or exiting fullscreen will count as a violation.</p>
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="bg-primary/20 text-primary w-6 h-6 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                                <p>Reaching <strong>{MAX_VIOLATIONS} violations</strong> will automatically submit your exam immediately.</p>
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="bg-primary/20 text-primary w-6 h-6 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                                <p>Progress is <strong>auto-saved</strong>. If your browser crashes, re-enter your email to resume.</p>
+                            </li>
+                        </ul>
+
+                        <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl mb-8">
+                            <p className="text-xs text-yellow-500 font-medium">
+                                Technical Check: Ensure you have a stable internet connection and your browser supports fullscreen mode.
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={handleStart}
+                            disabled={loading}
+                            className="w-full py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20"
+                        >
+                            {loading ? 'Starting...' : 'I Understand, Let\'s Start'}
+                        </button>
+                    </div>
+                </div>
+            </div>
         );
     }
 

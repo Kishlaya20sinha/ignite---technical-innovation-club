@@ -1,4 +1,4 @@
-const API_URL = (import.meta as any).env?.VITE_API_URL ||
+export const API_URL = (import.meta as any).env?.VITE_API_URL ||
     ((import.meta as any).env?.DEV ? 'http://localhost:5000' : 'https://ignite-technical-innovation-club.onrender.com');
 
 export const api = {
@@ -74,6 +74,10 @@ export const api = {
     getActiveExams: () => api.request('/api/exam/active'),
     addExamTime: (data: { submissionId: string, minutes: number }) => api.request('/api/exam/add-time', { method: 'POST', body: JSON.stringify(data) }),
     addExamTimeAll: (minutes: number) => api.request('/api/exam/add-time-all', { method: 'POST', body: JSON.stringify({ minutes }) }),
+    resetAllSubmissions: () => api.request('/api/exam/reset-all', { method: 'DELETE' }),
+    exportResultsCSVUrl: () => `${API_URL}/api/exam/export?token=${localStorage.getItem('ignite_admin_token')}`,
+    forceSubmitExam: (submissionId: string) => api.request('/api/exam/force-submit', { method: 'POST', body: JSON.stringify({ submissionId }) }),
+    syncAnswers: (data: { submissionId: string, answers: any[] }) => api.request('/api/exam/update-answers', { method: 'POST', body: JSON.stringify(data) }),
     getAllowlist: () => api.request('/api/exam/allowlist'),
     addToAllowlist: (data: any) => api.request('/api/exam/allowlist', { method: 'POST', body: JSON.stringify(data) }),
     getProfile: (email: string) => api.request(`/api/user/profile/${email}`),
@@ -98,4 +102,8 @@ export const api = {
 
     // Admin Users
     getAdminUsers: () => api.request('/api/admin/users'),
+
+    // System Config
+    getConfig: (key: string) => api.request(`/api/config/${key}`),
+    setConfig: (key: string, value: any) => api.request('/api/config', { method: 'POST', body: JSON.stringify({ key, value }) }),
 };

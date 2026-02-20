@@ -120,6 +120,66 @@ export function ExamPanel() {
         } catch (err: any) { alert(err.message); }
     };
 
+    const handleBulkUpload = async () => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.csv';
+        fileInput.onchange = async (e: any) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const text = event.target?.result as string;
+                const rows = text.split('\n').slice(1); // Skip header
+                const validQuestions = rows.map(row => {
+                    const cols = row.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+                    if (cols.length < 6) return null;
+                    return {
+                        question: cols[0],
+                        options: [cols[1], cols[2], cols[3], cols[4]],
+                        correctAnswer: parseInt(cols[5]) || 0,
+                        difficulty: cols[6]?.toLowerCase() || 'medium'
+                    };
+                }).filter(q => q !== null);
+
+                if (confirm(`Import ${validQuestions.length} MCQ questions from CSV?`)) {
+                    try {
+                        await api.addQuestionsBulk(validQuestions);
+                        alert("Import successful!");
+                        load();
+                    } catch (err: any) { alert(err.message); }
+                }
+            };
+            reader.readAsText(file);
+        };
+        fileInput.click();
+    };
+
+    const handleExport = () => {
+        const url = api.exportResultsCSVUrl();
+        window.open(url, '_blank');
+    };
+
+    const handleResetAll = async () => {
+        if (confirm("EXTREMELY DESTRUCTIVE: Delete ALL student submissions? This cannot be undone and is usually done once before the real exam starts.")) {
+            try {
+                await api.resetAllSubmissions();
+                alert("All submissions cleared.");
+                load();
+            } catch (err: any) { alert(err.message); }
+        }
+    };
+
+    const handleForceSubmit = async (id: string, name: string) => {
+        if (confirm(`Are you sure you want to FORCE SUBMIT ${name}'s exam? This will end their session immediately and grade their current answers.`)) {
+            try {
+                await api.forceSubmitExam(id);
+                alert("Exam submitted successfully.");
+                load();
+            } catch (err: any) { alert(err.message); }
+        }
+    };
+
     const inputClass = "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 transition-all text-sm";
 
     return (
@@ -144,11 +204,22 @@ export function ExamPanel() {
 
                 {view === 'questions' && (
                     <div className="ml-auto flex gap-2">
+                        <button onClick={handleBulkUpload} className="flex items-center gap-1 px-4 py-2 bg-green-600/10 text-green-500 border border-green-500/20 text-sm rounded-lg hover:bg-green-600/20">
+                            Bulk Import (CSV)
+                        </button>
                         <button onClick={handleGenerate} disabled={generating} className="flex items-center gap-1 px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50">
                             <Sparkles className="w-4 h-4" /> {generating ? 'Generating...' : 'AI Generate'}
                         </button>
                         <button onClick={() => { setShowForm(!showForm); setEditId(null); setForm({ question: '', options: ['', '', '', ''], correctAnswer: 0, type: 'mcq', difficulty: 'medium' }); }} className="flex items-center gap-1 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark">
                             <Plus className="w-4 h-4" /> Add Manual
+                        </button>
+                    </div>
+                )}
+
+                {view === 'submissions' && (
+                    <div className="ml-auto">
+                        <button onClick={handleExport} className="flex items-center gap-1 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">
+                            Download Results (CSV)
                         </button>
                     </div>
                 )}
@@ -286,6 +357,9 @@ export function ExamPanel() {
                                     <button onClick={() => giveViolation(s._id)} className="text-xs flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-3 py-1.5 rounded hover:bg-yellow-500/20 transition-colors">
                                         <AlertTriangle className="w-3 h-3" /> Report
                                     </button>
+                                    <button onClick={() => handleForceSubmit(s._id, s.name)} className="text-xs flex items-center gap-1 bg-red-600/10 text-red-500 px-3 py-1.5 rounded hover:bg-red-600/20 transition-colors">
+                                        Force Submit
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -394,6 +468,19 @@ export function ExamPanel() {
                             </button>
                         </div>
                     </form>
+
+                    <div className="mt-12 p-6 bg-red-500/5 border border-red-500/10 rounded-2xl">
+                        <h4 className="text-red-400 font-bold mb-2 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4" /> Danger Zone
+                        </h4>
+                        <p className="text-sm text-gray-500 mb-4">Wipe all student submissions and results. This is usually done after a trial run to clear the database for the actual exam.</p>
+                        <button
+                            onClick={handleResetAll}
+                            className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition-all"
+                        >
+                            Reset All Submissions
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

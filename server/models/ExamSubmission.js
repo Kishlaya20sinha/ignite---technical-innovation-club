@@ -4,7 +4,6 @@ const examSubmissionSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, trim: true, lowercase: true },
   rollNo: { type: String, required: true, trim: true },
-  rollNo: { type: String, required: true, trim: true },
   answers: [{ questionId: mongoose.Schema.Types.ObjectId, selectedAnswer: mongoose.Schema.Types.Mixed }], // Changed to Mixed for Input type string answers
   // Snapshot of questions given to this user (for AI generated papers)
   questionSnapshot: [{
