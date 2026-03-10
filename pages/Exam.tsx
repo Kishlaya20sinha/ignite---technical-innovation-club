@@ -22,6 +22,7 @@ const Exam: React.FC = () => {
     const [timeLeft, setTimeLeft] = useState(0);
     const [score, setScore] = useState({ score: 0, total: 0 });
     const [violations, setViolations] = useState(0);
+    const [warnings, setWarnings] = useState<{ id: number, msg: string }[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -91,48 +92,67 @@ const Exam: React.FC = () => {
         return () => clearInterval(interval);
     }, [phase, timeLeft, autoSubmit]);
 
+    // Watch for violations hitting limit to trigger submit
+    useEffect(() => {
+        if (phase === 'exam' && violations >= MAX_VIOLATIONS) {
+            autoSubmit();
+        }
+    }, [violations, phase, autoSubmit]);
+
     // Anti-cheating: visibility change
     useEffect(() => {
         if (phase !== 'exam') return;
         const handleVisibility = () => {
             if (document.hidden) {
-                const newCount = violations + 1;
-                setViolations(newCount);
+                setViolations(prev => prev + 1);
+                setWarnings(prev => [...prev, { id: Date.now(), msg: "⚠️ Warning: Tab switching or minimizing is not allowed. This is recorded as a violation." }]);
                 api.logViolation({ submissionId, type: 'tab-switch' }).catch(() => { });
-                if (newCount >= MAX_VIOLATIONS) {
-                    autoSubmit();
-                }
             }
         };
         document.addEventListener('visibilitychange', handleVisibility);
         return () => document.removeEventListener('visibilitychange', handleVisibility);
-    }, [phase, violations, submissionId, autoSubmit]);
+    }, [phase, submissionId]);
 
     // Anti-cheating: prevent copy/paste/right-click
     useEffect(() => {
         if (phase !== 'exam') return;
-        const prevent = (e: Event) => { e.preventDefault(); };
+        const warnUser = (action: string) => {
+            setWarnings(prev => [...prev, { id: Date.now(), msg: `⚠️ ${action} is disabled during the exam.` }]);
+        };
+        const prevent = (action: string) => (e: Event) => {
+            e.preventDefault();
+            warnUser(action);
+        };
         const preventKeys = (e: KeyboardEvent) => {
             if (e.ctrlKey && ['c', 'v', 'x', 'a', 'u', 's'].includes(e.key.toLowerCase())) {
                 e.preventDefault();
+                warnUser('Keyboard shortcuts');
             }
             if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
                 e.preventDefault();
+                warnUser('Developer tools');
             }
         };
-        document.addEventListener('contextmenu', prevent);
-        document.addEventListener('copy', prevent);
-        document.addEventListener('paste', prevent);
-        document.addEventListener('cut', prevent);
+
+        const preventCtx = prevent('Right-click');
+        const preventCopy = prevent('Copying');
+        const preventPaste = prevent('Pasting');
+        const preventCut = prevent('Cutting');
+        const preventSelect = prevent('Text selection');
+
+        document.addEventListener('contextmenu', preventCtx);
+        document.addEventListener('copy', preventCopy);
+        document.addEventListener('paste', preventPaste);
+        document.addEventListener('cut', preventCut);
         document.addEventListener('keydown', preventKeys);
-        document.addEventListener('selectstart', prevent);
+        document.addEventListener('selectstart', preventSelect);
         return () => {
-            document.removeEventListener('contextmenu', prevent);
-            document.removeEventListener('copy', prevent);
-            document.removeEventListener('paste', prevent);
-            document.removeEventListener('cut', prevent);
+            document.removeEventListener('contextmenu', preventCtx);
+            document.removeEventListener('copy', preventCopy);
+            document.removeEventListener('paste', preventPaste);
+            document.removeEventListener('cut', preventCut);
             document.removeEventListener('keydown', preventKeys);
-            document.removeEventListener('selectstart', prevent);
+            document.removeEventListener('selectstart', preventSelect);
         };
     }, [phase]);
 
@@ -148,11 +168,10 @@ const Exam: React.FC = () => {
     useEffect(() => {
         if (phase !== 'exam') return;
         const handleFullscreen = () => {
-            if (!document.fullscreenElement && phase === 'exam') {
-                const newCount = violations + 1;
-                setViolations(newCount);
+            if (!document.fullscreenElement) {
+                setViolations(prev => prev + 1);
+                setWarnings(prev => [...prev, { id: Date.now(), msg: "⚠️ Warning: Exiting fullscreen is not allowed. Please click 'I Understand' again if prompted to return." }]);
                 api.logViolation({ submissionId, type: 'fullscreen-exit' }).catch(() => { });
-                if (newCount >= MAX_VIOLATIONS) autoSubmit();
             }
         };
         document.addEventListener('fullscreenchange', handleFullscreen);
@@ -161,7 +180,7 @@ const Exam: React.FC = () => {
             document.removeEventListener('fullscreenchange', handleFullscreen);
             document.removeEventListener('webkitfullscreenchange', handleFullscreen);
         };
-    }, [phase, violations, submissionId, autoSubmit]);
+    }, [phase, submissionId]);
 
     const checkTimeWindow = async () => {
         try {
@@ -251,10 +270,9 @@ const Exam: React.FC = () => {
             try {
                 const res = await api.getExamStatus(submissionId);
                 const warnings = res.adminWarnings || [];
-
                 if (warnings.length > lastWarningCount) {
                     const latest = warnings[warnings.length - 1];
-                    alert(`⚠️ ADMIN WARNING:\n${latest.message}`);
+                    setWarnings(prev => [...prev, { id: Date.now(), msg: latest.message }]);
                     setLastWarningCount(warnings.length);
                 }
 
@@ -262,7 +280,7 @@ const Exam: React.FC = () => {
                     const added = (res.extraMinutes - lastExtraMinutes) * 60;
                     setTimeLeft(prev => prev + added);
                     setLastExtraMinutes(res.extraMinutes);
-                    alert(`⏰ EXTRA TIME GRANTED: +${res.extraMinutes - lastExtraMinutes} minutes!`);
+                    setWarnings(prev => [...prev, { id: Date.now(), msg: `⏰ EXTRA TIME GRANTED: +${res.extraMinutes - lastExtraMinutes} minutes!` }]);
                 }
 
                 if (res.status === 'submitted' || res.status === 'auto-submitted') {
@@ -348,6 +366,8 @@ const Exam: React.FC = () => {
                 loading={loading}
                 allQuestions={questions}
                 jumpToQuestion={setCurrentQ}
+                adminWarnings={warnings}
+                clearWarning={(id) => setWarnings(prev => prev.filter(w => w.id !== id))}
             />
         );
     }

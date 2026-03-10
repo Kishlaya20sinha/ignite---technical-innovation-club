@@ -12,11 +12,14 @@ export const ExamResult: React.FC<ExamResultProps> = ({ score, total, violations
     return (
         <div className="min-h-screen pt-24 flex items-center justify-center">
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center max-w-md mx-auto p-8">
-                <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />
-                <h2 className="text-3xl font-display font-bold mb-4">Exam Complete!</h2>
-                <div className="text-6xl font-display font-bold text-primary mb-2">{score}/{total}</div>
-                <p className="text-gray-400 mb-2">{Math.round((score / Math.max(total, 1)) * 100)}% correct</p>
-                {violations > 0 && <p className="text-yellow-400 text-sm">⚠ {violations} violation(s) recorded</p>}
+                <CheckCircle className="w-20 h-20 text-primary mx-auto mb-8 shadow-lg shadow-primary/20 rounded-full" />
+                <h2 className="text-4xl font-display font-bold mb-4 text-white">Exam Submitted!</h2>
+                <p className="text-gray-400 mb-8 text-lg">Your responses have been recorded successfully. You may now close this window.</p>
+                {violations > 0 && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 inline-block">
+                        <p className="text-yellow-500 font-semibold text-sm">⚠ {violations} violation(s) recorded during the exam</p>
+                    </div>
+                )}
             </motion.div>
         </div>
     );
