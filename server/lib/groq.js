@@ -34,28 +34,33 @@ export const generateExamQuestions = async (domain = 'General', count = 10) => {
         DIFFICULTY: ${difficulty.toUpperCase()}
         ${difficultyGuide[difficulty]}
         
+        CRITICAL ACCURACY REQUIREMENT: 
+        You must ensure the 'correctAnswer' index strictly matches the mathematically and factually correct option in the 'options' array. 
+        You MUST verify this by writing step-by-step reasoning BEFORE outputting the correctAnswer index.
+        
         IMPORTANT: ALL ${batchCount} questions MUST be "${difficulty}" difficulty. Do NOT mix difficulties.
         
-        Format: JSON Array of objects.
-        Each object must have:
-        - "question": string
+        Format your response as a JSON Object with a single key "questions" containing an array of objects.
+        Each object must have exactly these keys:
+        - "question": string (The question text itself)
         - "type": "mcq" (always "mcq")
-        - "options": array of exactly 4 strings
-        - "correctAnswer": number (index 0-3)
-        - "difficulty": "${difficulty}" (MUST be "${difficulty}" for every question)
+        - "options": array of exactly 4 strings (e.g. ["A", "B", "C", "D"])
+        - "reasoning": string (Verify factually why the correct answer is right and which option exactly it matches)
+        - "correctAnswer": number (Must be the exact integer index 0, 1, 2, or 3 of the correct option)
+        - "difficulty": "${difficulty}"
         
-        Return ONLY valid JSON.
+        Return ONLY a valid JSON object.
         `;
 
         try {
             const completion = await groq.chat.completions.create({
                 messages: [
-                    { role: "system", content: `You are a recruitment exam MCQ generator. You ONLY generate ${difficulty} difficulty questions. Output only valid JSON arrays.` },
+                    { role: "system", content: `You are an expert technical exam setter. Your highest priority is 100% FACTUAL ACCURACY. You must write out your reasoning to verify the correctAnswer index perfectly matches the true answer string in the options array.` },
                     { role: "user", content: prompt }
                 ],
-                model: "llama-3.1-8b-instant",
+                model: "llama-3.3-70b-versatile",
                 response_format: { type: "json_object" },
-                temperature: 0.7,
+                temperature: 0.3, // Extremely low temperature for analytical accuracy
             });
 
             const content = completion.choices[0]?.message?.content || '[]';
