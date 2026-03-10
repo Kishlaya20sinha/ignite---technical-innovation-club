@@ -448,6 +448,17 @@ router.post('/force-submit', auth, async (req, res) => {
   }
 });
 
+// DELETE /api/exam/submission/:id — admin: Delete a single submission (reset)
+router.delete('/submission/:id', auth, async (req, res) => {
+  try {
+    const deleted = await ExamSubmission.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Submission not found' });
+    res.json({ message: 'Submission deleted effectively resetting the student' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/exam/update-answers — student: Periodic sync of answers
 router.post('/update-answers', async (req, res) => {
   try {

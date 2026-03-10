@@ -180,7 +180,83 @@ export function ExamPanel() {
         }
     };
 
+    const handleResetSubmission = async (id: string, name: string) => {
+        if (confirm(`Are you sure you want to completely RESET ${name}'s exam? This deletes their submission entirely and allows them to start over.`)) {
+            try {
+                await api.resetSubmission(id);
+                alert("Submission reset successfully.");
+                load();
+            } catch (err: any) { alert(err.message); }
+        }
+    };
+
     const inputClass = "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 transition-all text-sm";
+
+    const renderTextWithInlineCode = (text: string) => {
+        if (!text) return null;
+        if (!text.includes('`')) return <>{text}</>;
+        const parts = text.split(/`([^`]+)`/);
+        return (
+            <>
+                {parts.map((part, index) => {
+                    if (index % 2 === 1) {
+                        // If it's a long snippet or contains semicolons/braces, render as a block
+                        if (part.length > 50 || part.includes(';') || part.includes('{')) {
+                            // Automatically insert newlines after semicolons and braces for better readability
+                            const formattedCode = part.trim()
+                                .replace(/; /g, ';\n')
+                                .replace(/;\s+/g, ';\n')
+                                .replace(/{ /g, '{\n')
+                                .replace(/{\s+/g, '{\n')
+                                .replace(/ }/g, '\n}')
+                                .replace(/\s+}/g, '\n}');
+
+                            return (
+                                <pre key={index} className="my-4 p-5 bg-[#121214] border border-white/10 rounded-xl overflow-x-auto text-sm font-mono text-emerald-400 whitespace-pre leading-relaxed shadow-inner block">
+                                    <code>{formattedCode}</code>
+                                </pre>
+                            );
+                        }
+                        return <code key={index} className="px-1.5 py-0.5 mx-0.5 bg-[#121214] text-emerald-400 rounded-md border border-white/10 font-mono text-[0.9em] shadow-sm">{part}</code>;
+                    }
+                    return <React.Fragment key={index}>{part}</React.Fragment>;
+                })}
+            </>
+        );
+    };
+
+    const renderQuestionText = (text: string) => {
+        if (!text) return null;
+        const codeMatch = text.match(/```([\s\S]*?)```/);
+        if (codeMatch) {
+            const parts = text.split(/```[\s\S]*?```/);
+            return (
+                <div className="mt-2 text-gray-300">
+                    <span className="leading-relaxed whitespace-pre-wrap block mb-2">{renderTextWithInlineCode(parts[0])}</span>
+                    <pre className="my-3 p-4 bg-[#121214] border border-white/10 rounded-xl overflow-x-auto text-xs font-mono text-emerald-400 whitespace-pre leading-relaxed shadow-inner">
+                        <code>{codeMatch[1].trim()}</code>
+                    </pre>
+                    {parts[1] && <span className="leading-relaxed whitespace-pre-wrap block mt-2">{renderTextWithInlineCode(parts[1])}</span>}
+                </div>
+            );
+        }
+        if (text.includes('\n') && text.split('\n').length > 2) {
+            const lines = text.split('\n');
+            const questionLine = lines[0];
+            const codeLines = lines.slice(1).join('\n').trim();
+            return (
+                <div className="mt-2 text-gray-300">
+                    <span className="leading-relaxed block mb-2">{renderTextWithInlineCode(questionLine)}</span>
+                    {codeLines && (
+                        <pre className="my-3 p-4 bg-[#121214] border border-white/10 rounded-xl overflow-x-auto text-xs font-mono text-emerald-400 whitespace-pre leading-relaxed shadow-inner">
+                            <code>{codeLines}</code>
+                        </pre>
+                    )}
+                </div>
+            );
+        }
+        return <div className="mt-1 text-gray-300 leading-relaxed whitespace-pre-wrap">{renderTextWithInlineCode(text)}</div>;
+    };
 
     return (
         <div>
@@ -243,19 +319,19 @@ export function ExamPanel() {
                         </div>
                     </div>
 
-                    <textarea value={form.question} onChange={e => setForm({ ...form, question: e.target.value })} placeholder="Question *" required rows={2} className={inputClass} />
+                    <textarea value={form.question} onChange={e => setForm({ ...form, question: e.target.value })} placeholder="Question Text (Markdown/Code allowed) *" required rows={4} className={inputClass} />
 
                     {form.type === 'mcq' && form.options.map((opt, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                            <input type="radio" name="correct" checked={Number(form.correctAnswer) === i} onChange={() => setForm({ ...form, correctAnswer: i })} className="accent-primary" />
-                            <input value={opt} onChange={e => { const opts = [...form.options]; opts[i] = e.target.value; setForm({ ...form, options: opts }); }}
-                                placeholder={`Option ${String.fromCharCode(65 + i)} *`} required className={inputClass} />
+                        <div key={i} className="flex items-start gap-3">
+                            <input type="radio" name="correct" checked={Number(form.correctAnswer) === i} onChange={() => setForm({ ...form, correctAnswer: i })} className="accent-primary mt-4 w-4 h-4" />
+                            <textarea value={opt} onChange={e => { const opts = [...form.options]; opts[i] = e.target.value; setForm({ ...form, options: opts }); }}
+                                placeholder={`Option ${String.fromCharCode(65 + i)} *`} required rows={2} className={`${inputClass} flex-1`} />
                         </div>
                     ))}
 
                     {form.type === 'input' && (
-                        <input value={form.correctAnswer} onChange={e => setForm({ ...form, correctAnswer: e.target.value })}
-                            placeholder="Expected Answer / Keyword *" required className={inputClass} />
+                        <textarea value={form.correctAnswer} onChange={e => setForm({ ...form, correctAnswer: e.target.value })}
+                            placeholder="Expected Answer / Keyword *" required rows={2} className={inputClass} />
                     )}
 
                     <div className="flex gap-2 items-center justify-between mt-2">
@@ -307,17 +383,19 @@ export function ExamPanel() {
                         <div key={q._id} className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <span className="text-xs text-gray-500 mr-2">Q{i + 1}</span>
-                                    <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded mr-2 ${q.difficulty === 'easy' ? 'bg-green-500/15 text-green-400 border border-green-500/20' :
-                                        q.difficulty === 'hard' ? 'bg-red-500/15 text-red-400 border border-red-500/20' :
-                                            'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
-                                        }`}>{q.difficulty || 'medium'}</span>
-                                    <span className="font-medium text-sm">{q.question}</span>
+                                    <div className="flex items-center mb-1">
+                                        <span className="text-xs text-gray-500 mr-2">Q{i + 1}</span>
+                                        <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded mr-2 ${q.difficulty === 'easy' ? 'bg-green-500/15 text-green-400 border border-green-500/20' :
+                                            q.difficulty === 'hard' ? 'bg-red-500/15 text-red-400 border border-red-500/20' :
+                                                'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
+                                            }`}>{q.difficulty || 'medium'}</span>
+                                    </div>
+                                    <div className="font-medium text-sm w-full">{renderQuestionText(q.question)}</div>
                                     {(q.type || 'mcq').toLowerCase() === 'mcq' && q.options && q.options.length > 0 ? (
-                                        <div className="flex gap-2 mt-2 flex-wrap">
+                                        <div className="flex gap-2 mt-3 flex-wrap">
                                             {q.options.map((opt: string, j: number) => (
-                                                <span key={j} className={`text-xs px-2 py-1 rounded-lg ${j === Number(q.correctAnswer) ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-white/5 text-gray-500'}`}>
-                                                    {String.fromCharCode(65 + j)}. {opt}
+                                                <span key={j} className={`text-xs px-3 py-1.5 rounded-lg border ${j === Number(q.correctAnswer) ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-white/5 text-gray-400 border-white/5'}`}>
+                                                    <span className="font-bold mr-1">{String.fromCharCode(65 + j)}.</span> {renderTextWithInlineCode(opt)}
                                                 </span>
                                             ))}
                                         </div>
@@ -399,6 +477,9 @@ export function ExamPanel() {
                                     <button onClick={() => handleForceSubmit(s._id, s.name)} className="text-xs flex items-center gap-1 bg-red-600/10 text-red-500 px-3 py-1.5 rounded hover:bg-red-600/20 transition-colors">
                                         Force Submit
                                     </button>
+                                    <button onClick={() => handleResetSubmission(s._id, s.name)} className="text-xs flex items-center gap-1 bg-gray-500/10 text-gray-400 border border-gray-500/20 px-3 py-1.5 rounded hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 transition-colors" title="Delete & Reset">
+                                        <Trash2 className="w-3 h-3" /> Reset
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -413,6 +494,7 @@ export function ExamPanel() {
                         <thead><tr className="text-gray-500 text-left text-xs border-b border-white/5">
                             <th className="pb-3">Rank</th><th className="pb-3">Name</th><th className="pb-3">Roll No</th><th className="pb-3">Score</th>
                             <th className="pb-3">Status</th><th className="pb-3">Violations</th><th className="pb-3">Time</th>
+                            <th className="pb-3 text-right">Actions</th>
                         </tr></thead>
                         <tbody>
                             {submissions.map((s, i) => (
@@ -428,6 +510,11 @@ export function ExamPanel() {
                                     </td>
                                     <td className="py-3">{s.violations > 0 ? <span className="text-yellow-400">{s.violations}</span> : <span className="text-gray-600">0</span>}</td>
                                     <td className="py-3 text-xs text-gray-500">{s.submittedAt ? new Date(s.submittedAt).toLocaleString() : '-'}</td>
+                                    <td className="py-3 text-right">
+                                        <button onClick={() => handleResetSubmission(s._id, s.name)} className="text-gray-500 hover:text-red-400 transition-colors p-2 hover:bg-white/5 rounded-lg" title="Delete & Reset Submission">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

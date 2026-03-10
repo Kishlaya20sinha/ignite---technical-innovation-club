@@ -79,6 +79,7 @@ export const api = {
     exportResultsCSVUrl: () => `${API_URL}/api/exam/export?token=${localStorage.getItem('ignite_admin_token')}`,
     forceSubmitExam: (submissionId: string) => api.request('/api/exam/force-submit', { method: 'POST', body: JSON.stringify({ submissionId }) }),
     syncAnswers: (data: { submissionId: string, answers: any[] }) => api.request('/api/exam/update-answers', { method: 'POST', body: JSON.stringify(data) }),
+    resetSubmission: (id: string) => api.request(`/api/exam/submission/${id}`, { method: 'DELETE' }),
     getAllowlist: () => api.request('/api/exam/allowlist'),
     addToAllowlist: (data: any) => api.request('/api/exam/allowlist', { method: 'POST', body: JSON.stringify(data) }),
     getProfile: (email: string) => api.request(`/api/user/profile/${email}`),
