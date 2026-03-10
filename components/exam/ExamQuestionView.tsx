@@ -53,10 +53,45 @@ export const ExamQuestionView: React.FC<ExamQuestionViewProps> = ({
             {/* Question */}
             <motion.div key={question._id} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-4xl mx-auto px-4 py-8 bg-white/[0.02] border border-white/5 rounded-3xl shadow-2xl mb-12">
                 <div className="flex justify-between items-start mb-10 gap-6">
-                    <h2 className="text-2xl font-bold leading-relaxed text-white">
-                        <span className="text-primary mr-3 italic opacity-50"># {currentQ + 1}</span>
-                        {question.question}
-                    </h2>
+                    <div className="text-white w-full">
+                        <span className="text-primary mr-3 italic opacity-50 text-2xl font-bold"># {currentQ + 1}</span>
+                        {(() => {
+                            const text = question.question;
+                            // Check if question contains code (has newlines + code-like patterns)
+                            const codeMatch = text.match(/```([\s\S]*?)```/);
+                            if (codeMatch) {
+                                const parts = text.split(/```[\s\S]*?```/);
+                                return (
+                                    <>
+                                        <span className="text-2xl font-bold leading-relaxed">{parts[0]}</span>
+                                        <pre className="mt-4 p-4 bg-black/40 border border-white/10 rounded-xl overflow-x-auto text-sm font-mono text-green-300 whitespace-pre leading-relaxed">
+                                            <code>{codeMatch[1].trim()}</code>
+                                        </pre>
+                                        {parts[1] && <span className="text-lg text-gray-300 mt-2 block">{parts[1]}</span>}
+                                    </>
+                                );
+                            }
+                            // Check if text has multiple newlines (likely contains inline code)
+                            if (text.includes('\n') && text.split('\n').length > 2) {
+                                const lines = text.split('\n');
+                                // First line is the question, rest is code
+                                const questionLine = lines[0];
+                                const codeLines = lines.slice(1).join('\n').trim();
+                                return (
+                                    <>
+                                        <span className="text-2xl font-bold leading-relaxed">{questionLine}</span>
+                                        {codeLines && (
+                                            <pre className="mt-4 p-4 bg-black/40 border border-white/10 rounded-xl overflow-x-auto text-sm font-mono text-green-300 whitespace-pre leading-relaxed">
+                                                <code>{codeLines}</code>
+                                            </pre>
+                                        )}
+                                    </>
+                                );
+                            }
+                            // Plain text question - still preserve any newlines
+                            return <span className="text-2xl font-bold leading-relaxed" style={{ whiteSpace: 'pre-wrap' }}>{text}</span>;
+                        })()}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
