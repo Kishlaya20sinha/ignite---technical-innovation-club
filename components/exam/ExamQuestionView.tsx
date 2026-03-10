@@ -190,7 +190,7 @@ export const ExamQuestionView: React.FC<ExamQuestionViewProps> = ({
                                     </div>
                                     <span className={`text-base md:text-lg transition-colors leading-relaxed w-full whitespace-pre-wrap ${answers[question._id] === i ? 'text-white font-semibold' : 'text-gray-300'
                                         }`}>
-                                        {renderTextWithInlineCode(option)}
+                                        {option}
                                     </span>
                                 </button>
                             ))}

@@ -31,20 +31,34 @@ export const generateExamQuestions = async (domain = 'General', count = 10) => {
         Generate exactly ${batchCount} ${difficulty.toUpperCase()} difficulty Multiple Choice Questions (MCQs) for a technical recruitment exam.
         Domain: ${domain} (Aptitude, Coding, CS Fundamentals).
         
+        LANGUAGE CONSTRAINT:
+        - All programming-related questions and code snippets MUST be written in the **C programming language** by default, unless the domain explicitly mentions another language.
+        
         DIFFICULTY: ${difficulty.toUpperCase()}
         ${difficultyGuide[difficulty]}
         
         CRITICAL ACCURACY REQUIREMENT: 
         You must ensure the 'correctAnswer' index strictly matches the mathematically and factually correct option in the 'options' array. 
         You MUST verify this by writing step-by-step reasoning BEFORE outputting the correctAnswer index.
+
+        CRITICAL FORMATTING REQUIREMENT:
+        - You MUST wrap ALL code snippets, variable names, keywords, and function names inside the "question" string in single backticks (e.g., \`int x = 5;\`).
+        - For longer, multi-line code snippets inside the "question", wrap them in triple backticks (e.g., \`\`\`c ... \`\`\`).
+        - Do not output code as plain text in the question.
+        - IMPORTANT: Do NOT use backticks inside the "options" array. Options should be plain text, even if they contain code.
+
+        CRITICAL DIVERSITY REQUIREMENT:
+        - ALL ${batchCount} questions MUST be entirely unique. 
+        - Do NOT cover the same topic twice (e.g., if you ask one question about a nested loop's time complexity, do NOT ask another one).
+        - Ensure a wide variety of topics within the domain.
         
         IMPORTANT: ALL ${batchCount} questions MUST be "${difficulty}" difficulty. Do NOT mix difficulties.
         
         Format your response as a JSON Object with a single key "questions" containing an array of objects.
         Each object must have exactly these keys:
-        - "question": string (The question text itself)
+        - "question": string (The question text itself, WITH backticks around code)
         - "type": "mcq" (always "mcq")
-        - "options": array of exactly 4 strings (e.g. ["A", "B", "C", "D"])
+        - "options": array of exactly 4 strings (e.g. ["A", "B", "C", "D"], Plain text only, NO backticks)
         - "reasoning": string (Verify factually why the correct answer is right and which option exactly it matches)
         - "correctAnswer": number (Must be the exact integer index 0, 1, 2, or 3 of the correct option)
         - "difficulty": "${difficulty}"
