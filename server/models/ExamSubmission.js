@@ -11,7 +11,8 @@ const examSubmissionSchema = new mongoose.Schema({
       question: String,
       options: [String],
       type: { type: String, enum: ['mcq', 'input'], default: 'mcq' },
-      correctAnswer: mongoose.Schema.Types.Mixed
+      correctAnswer: mongoose.Schema.Types.Mixed,
+      difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' }
   }],
   adminWarnings: [{ message: String, timestamp: Date }],
   score: { type: Number, default: 0 },

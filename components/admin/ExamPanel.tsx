@@ -231,6 +231,11 @@ export function ExamPanel() {
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="font-bold">{editId ? 'Edit Question' : 'New Question'}</h3>
                         <div className="flex gap-2">
+                            <select value={form.difficulty} onChange={e => setForm({ ...form, difficulty: e.target.value })} className={`${inputClass} w-auto bg-gray-900 text-white`}>
+                                <option value="easy" className="bg-gray-900 text-white">🟢 Easy</option>
+                                <option value="medium" className="bg-gray-900 text-white">🟡 Medium</option>
+                                <option value="hard" className="bg-gray-900 text-white">🔴 Hard</option>
+                            </select>
                             <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} className={`${inputClass} w-auto bg-gray-900 text-white`}>
                                 <option value="mcq" className="bg-gray-900 text-white">Multiple Choice</option>
                                 <option value="input" className="bg-gray-900 text-white">Text Input</option>
@@ -268,11 +273,45 @@ export function ExamPanel() {
 
             {view === 'questions' && (
                 <div className="space-y-3">
+                    {/* Question Bank Stats */}
+                    {(() => {
+                        const easyCount = questions.filter((q: any) => q.difficulty === 'easy').length;
+                        const medCount = questions.filter((q: any) => q.difficulty === 'medium').length;
+                        const hardCount = questions.filter((q: any) => q.difficulty === 'hard').length;
+                        const minEasy = 5, minMed = 8, minHard = 7;
+                        return (
+                            <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl mb-2">
+                                <div className="flex items-center justify-between flex-wrap gap-3">
+                                    <span className="text-sm font-bold text-gray-300">Question Bank: <span className="text-primary">{questions.length}</span> total</span>
+                                    <div className="flex gap-3 text-xs font-bold">
+                                        <span className={`px-3 py-1.5 rounded-lg ${easyCount >= minEasy ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse'}`}>
+                                            🟢 Easy: {easyCount} {easyCount < minEasy && `(need ${minEasy})`}
+                                        </span>
+                                        <span className={`px-3 py-1.5 rounded-lg ${medCount >= minMed ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse'}`}>
+                                            🟡 Medium: {medCount} {medCount < minMed && `(need ${minMed})`}
+                                        </span>
+                                        <span className={`px-3 py-1.5 rounded-lg ${hardCount >= minHard ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse'}`}>
+                                            🔴 Hard: {hardCount} {hardCount < minHard && `(need ${minHard})`}
+                                        </span>
+                                    </div>
+                                </div>
+                                {(easyCount < minEasy || medCount < minMed || hardCount < minHard) && (
+                                    <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
+                                        ⚠️ Insufficient questions for exam generation (need min 5 Easy + 8 Medium + 7 Hard = 20 per student)
+                                    </p>
+                                )}
+                            </div>
+                        );
+                    })()}
                     {questions.map((q, i) => (
                         <div key={q._id} className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <span className="text-xs text-gray-500 mr-2">Q{i + 1}</span>
+                                    <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded mr-2 ${q.difficulty === 'easy' ? 'bg-green-500/15 text-green-400 border border-green-500/20' :
+                                        q.difficulty === 'hard' ? 'bg-red-500/15 text-red-400 border border-red-500/20' :
+                                            'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
+                                        }`}>{q.difficulty || 'medium'}</span>
                                     <span className="font-medium text-sm">{q.question}</span>
                                     {(q.type || 'mcq').toLowerCase() === 'mcq' && q.options && q.options.length > 0 ? (
                                         <div className="flex gap-2 mt-2 flex-wrap">
@@ -473,13 +512,35 @@ export function ExamPanel() {
                         <h4 className="text-red-400 font-bold mb-2 flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4" /> Danger Zone
                         </h4>
-                        <p className="text-sm text-gray-500 mb-4">Wipe all student submissions and results. This is usually done after a trial run to clear the database for the actual exam.</p>
-                        <button
-                            onClick={handleResetAll}
-                            className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition-all"
-                        >
-                            Reset All Submissions
-                        </button>
+                        <p className="text-sm text-gray-500 mb-4">Destructive actions that cannot be undone.</p>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-xs text-gray-500 mb-2">Wipe all student submissions and results. Usually done after a trial run.</p>
+                                <button
+                                    onClick={handleResetAll}
+                                    className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition-all"
+                                >
+                                    Reset All Submissions
+                                </button>
+                            </div>
+                            <div className="border-t border-red-500/10 pt-4">
+                                <p className="text-xs text-gray-500 mb-2">Delete ALL questions from the question bank. You will need to re-import/add questions.</p>
+                                <button
+                                    onClick={async () => {
+                                        if (confirm(`DESTRUCTIVE: Delete ALL ${questions.length} questions from the question bank? This cannot be undone.`)) {
+                                            try {
+                                                await api.clearAllQuestions();
+                                                alert("Question bank cleared.");
+                                                load();
+                                            } catch (err: any) { alert(err.message); }
+                                        }
+                                    }}
+                                    className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition-all"
+                                >
+                                    Clear Question Bank ({questions.length})
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

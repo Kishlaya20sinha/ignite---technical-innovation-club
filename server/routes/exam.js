@@ -75,6 +75,7 @@ router.post('/questions/generate', auth, async (req, res) => {
             options: q.options,
             type: q.type || 'mcq',
             correctAnswer: q.correctAnswer,
+            difficulty: q.difficulty || 'medium',
             isActive: true
         })));
         
@@ -101,6 +102,16 @@ router.put('/questions/:id', auth, async (req, res) => {
     res.json(question);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// DELETE /api/exam/questions/clear-all — admin: Wipe entire question bank
+router.delete('/questions/clear-all', auth, async (req, res) => {
+  try {
+    const result = await ExamQuestion.deleteMany({});
+    res.json({ message: `Deleted ${result.deletedCount} questions from the bank.` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -168,7 +179,8 @@ router.post('/start', async (req, res) => {
         return {
             ...q,
             options: shuffled.map(s => s.opt),
-            correctAnswer: newCorrectIdx // Save this for grading
+            correctAnswer: newCorrectIdx, // Save this for grading
+            difficulty: q.difficulty || 'medium' // Preserve difficulty in snapshot
         };
     });
 

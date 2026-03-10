@@ -75,6 +75,7 @@ export const api = {
     addExamTime: (data: { submissionId: string, minutes: number }) => api.request('/api/exam/add-time', { method: 'POST', body: JSON.stringify(data) }),
     addExamTimeAll: (minutes: number) => api.request('/api/exam/add-time-all', { method: 'POST', body: JSON.stringify({ minutes }) }),
     resetAllSubmissions: () => api.request('/api/exam/reset-all', { method: 'DELETE' }),
+    clearAllQuestions: () => api.request('/api/exam/questions/clear-all', { method: 'DELETE' }),
     exportResultsCSVUrl: () => `${API_URL}/api/exam/export?token=${localStorage.getItem('ignite_admin_token')}`,
     forceSubmitExam: (submissionId: string) => api.request('/api/exam/force-submit', { method: 'POST', body: JSON.stringify({ submissionId }) }),
     syncAnswers: (data: { submissionId: string, answers: any[] }) => api.request('/api/exam/update-answers', { method: 'POST', body: JSON.stringify(data) }),
