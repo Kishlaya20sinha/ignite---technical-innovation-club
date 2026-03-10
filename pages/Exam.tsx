@@ -74,7 +74,12 @@ const Exam: React.FC = () => {
             setScore(result);
             setPhase('result');
             localStorage.removeItem(`exam_progress_${submissionId}`);
-        } catch { }
+        } catch (err: any) {
+            console.error("Auto-submit failed:", err);
+            // If it fails (e.g. backend says "already submitted"), force them to result screen anyway
+            setPhase('result');
+            localStorage.removeItem(`exam_progress_${submissionId}`);
+        }
     }, [answers, submissionId, phase]);
 
     // Timer logic
@@ -134,6 +139,16 @@ const Exam: React.FC = () => {
             }
         };
 
+        const preventScreenCapture = (e: KeyboardEvent) => {
+            if (e.key === 'PrintScreen' || (e.metaKey && e.shiftKey && e.key.toLowerCase() === 's')) {
+                e.preventDefault();
+                navigator.clipboard.writeText('').catch(() => { }); // Try to clear clipboard
+                setViolations(prev => prev + 1);
+                warnUser('Screenshots / Snipping Tool');
+                api.logViolation({ submissionId, type: 'screenshot' }).catch(() => { });
+            }
+        };
+
         const preventCtx = prevent('Right-click');
         const preventCopy = prevent('Copying');
         const preventPaste = prevent('Pasting');
@@ -145,6 +160,7 @@ const Exam: React.FC = () => {
         document.addEventListener('paste', preventPaste);
         document.addEventListener('cut', preventCut);
         document.addEventListener('keydown', preventKeys);
+        document.addEventListener('keyup', preventScreenCapture);
         document.addEventListener('selectstart', preventSelect);
         return () => {
             document.removeEventListener('contextmenu', preventCtx);
@@ -152,9 +168,10 @@ const Exam: React.FC = () => {
             document.removeEventListener('paste', preventPaste);
             document.removeEventListener('cut', preventCut);
             document.removeEventListener('keydown', preventKeys);
+            document.removeEventListener('keyup', preventScreenCapture);
             document.removeEventListener('selectstart', preventSelect);
         };
-    }, [phase]);
+    }, [phase, submissionId]);
 
     // Fullscreen logic
     const enterFullscreen = () => {
@@ -168,9 +185,11 @@ const Exam: React.FC = () => {
     useEffect(() => {
         if (phase !== 'exam') return;
         const handleFullscreen = () => {
-            if (!document.fullscreenElement) {
+            const isFull = !!document.fullscreenElement || !!(document as any).webkitFullscreenElement;
+            setIsFullscreen(isFull);
+            if (!isFull) {
                 setViolations(prev => prev + 1);
-                setWarnings(prev => [...prev, { id: Date.now(), msg: "⚠️ Warning: Exiting fullscreen is not allowed. Please click 'I Understand' again if prompted to return." }]);
+                setWarnings(prev => [...prev, { id: Date.now(), msg: "⚠️ Warning: Exiting fullscreen is not allowed. Please click 'Return to Exam' to continue." }]);
                 api.logViolation({ submissionId, type: 'fullscreen-exit' }).catch(() => { });
             }
         };
@@ -351,24 +370,45 @@ const Exam: React.FC = () => {
 
     if (phase === 'exam' && questions[currentQ]) {
         return (
-            <ExamQuestionView
-                currentQ={currentQ}
-                totalQ={questions.length}
-                question={questions[currentQ]}
-                answers={answers}
-                setAnswer={(qId, val) => setAnswers(prev => ({ ...prev, [qId]: val }))}
-                timeLeft={timeLeft}
-                violations={violations}
-                maxViolations={MAX_VIOLATIONS}
-                onNext={() => setCurrentQ(Math.min(questions.length - 1, currentQ + 1))}
-                onPrev={() => setCurrentQ(Math.max(0, currentQ - 1))}
-                onSubmit={submitExam}
-                loading={loading}
-                allQuestions={questions}
-                jumpToQuestion={setCurrentQ}
-                adminWarnings={warnings}
-                clearWarning={(id) => setWarnings(prev => prev.filter(w => w.id !== id))}
-            />
+            <>
+                {/* Fullscreen Blocker Overlay */}
+                {!isFullscreen && (
+                    <div className="fixed inset-0 z-[9999] bg-[#0a0a0c]/95 backdrop-blur-xl flex flex-col items-center justify-center text-center p-6">
+                        <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse border border-red-500/20">
+                            <span className="text-4xl">⚠️</span>
+                        </div>
+                        <h2 className="text-4xl font-display font-bold text-white mb-4">Fullscreen Required</h2>
+                        <p className="text-gray-400 text-lg max-w-lg mb-8 leading-relaxed">
+                            You have exited fullscreen mode or opened another app. This has been recorded as a violation. You must remain in fullscreen to continue the exam.
+                        </p>
+                        <button
+                            onClick={enterFullscreen}
+                            className="px-10 py-5 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-bold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-red-600/30"
+                        >
+                            Return to Exam
+                        </button>
+                    </div>
+                )}
+
+                <ExamQuestionView
+                    currentQ={currentQ}
+                    totalQ={questions.length}
+                    question={questions[currentQ]}
+                    answers={answers}
+                    setAnswer={(qId, val) => setAnswers(prev => ({ ...prev, [qId]: val }))}
+                    timeLeft={timeLeft}
+                    violations={violations}
+                    maxViolations={MAX_VIOLATIONS}
+                    onNext={() => setCurrentQ(Math.min(questions.length - 1, currentQ + 1))}
+                    onPrev={() => setCurrentQ(Math.max(0, currentQ - 1))}
+                    onSubmit={submitExam}
+                    loading={loading}
+                    allQuestions={questions}
+                    jumpToQuestion={setCurrentQ}
+                    adminWarnings={warnings}
+                    clearWarning={(id) => setWarnings(prev => prev.filter(w => w.id !== id))}
+                />
+            </>
         );
     }
 

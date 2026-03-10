@@ -280,6 +280,31 @@ router.post('/violation', async (req, res) => {
 
     submission.violations += 1;
     submission.violationLog.push({ type, timestamp: new Date() });
+
+    // Strong Backend Enforcement: Max Violations = 3
+    if (submission.violations >= 3 && submission.status === 'in-progress') {
+        submission.status = 'auto-submitted';
+        submission.submittedAt = new Date();
+        
+        let score = 0;
+        const snapshot = submission.questionSnapshot || [];
+        const answers = submission.answers || []; // from background syncs
+        
+        if (snapshot.length > 0) {
+            snapshot.forEach(q => {
+                const userAnswer = answers.find(a => a.questionId === q._id.toString())?.selectedAnswer;
+                if (q.type === 'mcq') {
+                     if (userAnswer === q.correctAnswer) score++;
+                } else if (userAnswer !== undefined && q.correctAnswer !== undefined) {
+                    if (String(userAnswer).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()) {
+                        score++;
+                    }
+                }
+            });
+        }
+        submission.score = score;
+    }
+
     await submission.save();
 
     res.json({ violations: submission.violations });
