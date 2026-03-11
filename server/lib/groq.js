@@ -31,9 +31,6 @@ export const generateExamQuestions = async (domain = 'General', count = 10) => {
         Generate exactly ${batchCount} ${difficulty.toUpperCase()} difficulty Multiple Choice Questions (MCQs) for a technical recruitment exam.
         Domain: ${domain} (Aptitude, Coding, CS Fundamentals).
         
-        LANGUAGE CONSTRAINT:
-        - All programming-related questions and code snippets MUST be written in the **C programming language** by default, unless the domain explicitly mentions another language.
-        
         DIFFICULTY: ${difficulty.toUpperCase()}
         ${difficultyGuide[difficulty]}
         
