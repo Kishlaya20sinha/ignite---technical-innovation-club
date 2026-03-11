@@ -130,9 +130,35 @@ export function ExamPanel() {
             const reader = new FileReader();
             reader.onload = async (event) => {
                 const text = event.target?.result as string;
-                const rows = text.split('\n').slice(1); // Skip header
-                const validQuestions = rows.map(row => {
-                    const cols = row.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+                const rows = text.split(/\r?\n/).filter(r => r.trim());
+                if (rows.length < 2) return;
+
+                const dataRows = rows.slice(1); // Skip header
+
+                const parseCSVRow = (row: string) => {
+                    const result = [];
+                    let current = '';
+                    let inQuotes = false;
+                    for (let i = 0; i < row.length; i++) {
+                        const char = row[i];
+                        if (char === '"' && row[i + 1] === '"') { // Escaped quote
+                            current += '"';
+                            i++;
+                        } else if (char === '"') {
+                            inQuotes = !inQuotes;
+                        } else if (char === ',' && !inQuotes) {
+                            result.push(current.trim());
+                            current = '';
+                        } else {
+                            current += char;
+                        }
+                    }
+                    result.push(current.trim());
+                    return result;
+                };
+
+                const validQuestions = dataRows.map(row => {
+                    const cols = parseCSVRow(row);
                     if (cols.length < 6) return null;
                     return {
                         question: cols[0],

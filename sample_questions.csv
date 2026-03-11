@@ -1,0 +1,26 @@
+Question,Option A,Option B,Option C,Option D,CorrectAnswer,Difficulty
+"What is the output of `printf(""%d"", 10 >> 1);`?",5,10,20,1,0,easy
+Which keyword is used to prevent a variable from being modified in C?,static,volatile,const,extern,2,easy
+What is the time complexity of searching an element in a balanced Binary Search Tree?,O(1),O(n),O(log n),O(n log n),2,medium
+"```c
+int main() {
+    int a = 5, b = 10;
+    int *p = &a;
+    *p = b;
+    printf(""%d %d"", a, b);
+    return 0;
+}
+```",5 10,10 10,10 5,5 5,1,medium
+What does the `realloc()` function do in C?,Allocates memory,Deallocates memory,Resizes previously allocated memory,Clears memory,2,medium
+Which of the following is not a valid storage class in C?,auto,register,static,dynamic,3,medium
+What is the purpose of a 'null pointer' in C?,To point to the address 0,To indicate that the pointer does not point to any valid object,To cause a segmentation fault,To delete a variable,1,easy
+"In a Max-Heap, where is the largest element stored?",At a leaf node,At the root node,In the middle of the heap,Depends on the input,1,easy
+Which sorting algorithm has the best worst-case time complexity?,Bubble Sort,Selection Sort,Merge Sort,Insertion Sort,2,medium
+"```c
+#include <stdio.h>
+int main() {
+    char str[] = ""Ignite"";
+    printf(""%d"", sizeof(str));
+    return 0;
+}
+```",6,7,8,Error,1,hard
