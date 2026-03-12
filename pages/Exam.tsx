@@ -208,12 +208,16 @@ const Exam: React.FC = () => {
         try {
             const config = await api.get('/api/exam/config');
             const now = new Date();
-            if (config.startTime && new Date(config.startTime) > now) {
-                const startStr = new Date(config.startTime).toLocaleString();
-                setError(`Exam has not started yet. It begins at ${startStr}`);
+
+            // config.startTime is 'YYYY-MM-DDTHH:MM' (local time from admin)
+            const start = config.startTime ? new Date(config.startTime) : null;
+            const end = config.endTime ? new Date(config.endTime) : null;
+
+            if (start && start > now) {
+                setError(`Exam has not started yet. It begins at ${start.toLocaleString()}`);
                 return false;
             }
-            if (config.endTime && new Date(config.endTime) < now) {
+            if (end && end < now) {
                 setError("Exam has ended. Registrations are closed.");
                 return false;
             }

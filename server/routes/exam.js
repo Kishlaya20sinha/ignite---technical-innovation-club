@@ -140,12 +140,18 @@ router.post('/start', async (req, res) => {
     try {
         const startTimeCfg = await SystemConfig.findOne({ key: 'exam_start' });
         const endTimeCfg = await SystemConfig.findOne({ key: 'exam_end' });
+        
+        // datetime-local inputs send strings like '2026-03-12T18:00'
+        // We need to parse these as local time to match what the admin saw
+        const parseLocal = (s) => s ? new Date(s) : null;
+        const start = parseLocal(startTimeCfg?.value);
+        const end = parseLocal(endTimeCfg?.value);
         const now = new Date();
 
-        if (startTimeCfg?.value && new Date(startTimeCfg.value) > now) {
-            return res.status(403).json({ error: `Exam has not started yet. It begins at ${new Date(startTimeCfg.value).toLocaleString()}` });
+        if (start && start > now) {
+            return res.status(403).json({ error: `Exam has not started yet. It begins at ${start.toLocaleString()}` });
         }
-        if (endTimeCfg?.value && new Date(endTimeCfg.value) < now) {
+        if (end && end < now) {
             return res.status(403).json({ error: 'The exam window has closed.' });
         }
     } catch (e) { console.error("Config check failed", e); }
