@@ -531,7 +531,7 @@ export function ExamPanel() {
                                     </div>
                                 </div>
 
-                                <div className="flex gap-2 text-xs">
+                                <div className="flex flex-wrap gap-2 text-xs">
                                     <span className="bg-white/5 px-2 py-1 rounded">Roll: {s.rollNo}</span>
                                     <div className="flex flex-wrap gap-1 mt-1">
                                         {s.violations > 0 ? (
@@ -548,7 +548,7 @@ export function ExamPanel() {
                                 <p className="mt-3 text-xs text-gray-500">Started: {new Date(s.startedAt).toLocaleTimeString()}</p>
 
                                 {/* Violation actions */}
-                                <div className="mt-4 border-t border-white/5 pt-3 flex gap-2 justify-end">
+                                <div className="mt-4 border-t border-white/5 pt-3 flex flex-wrap gap-2">
                                     <button onClick={() => sendWarning(s._id)} className="text-xs flex items-center gap-1 bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded hover:bg-blue-500/20 transition-colors">
                                         <AlertTriangle className="w-3 h-3" /> Warning
                                     </button>
