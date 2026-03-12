@@ -59,6 +59,7 @@ export const generateExamQuestions = async (domain = 'General', count = 10) => {
         - "reasoning": string (Verify factually why the correct answer is right and which option exactly it matches)
         - "correctAnswer": number (Must be the exact integer index 0, 1, 2, or 3 of the correct option)
         - "difficulty": "${difficulty}"
+        - "category": string (Must be "coding" if it contains code/programming logic, or "aptitude" if it is math/logic/IQ based)
         
         Return ONLY a valid JSON object.
         `;
@@ -87,7 +88,8 @@ export const generateExamQuestions = async (domain = 'General', count = 10) => {
                 correctAnswer: (typeof q.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer < 4) 
                     ? q.correctAnswer 
                     : 0,
-                difficulty: difficulty // Force the difficulty we requested
+                difficulty: difficulty, // Force the difficulty we requested
+                category: ['coding', 'aptitude'].includes(String(q.category).toLowerCase()) ? String(q.category).toLowerCase() : 'coding'
             }));
         } catch (error) {
             console.error(`Groq generation error for ${difficulty}:`, error);

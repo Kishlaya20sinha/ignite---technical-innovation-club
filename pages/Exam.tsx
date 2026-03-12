@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2 } from 'lucide-react';
 import { ExamRegister } from '../components/exam/ExamRegister';
 import { ExamQuestionView } from '../components/exam/ExamQuestionView';
 import { ExamResult } from '../components/exam/ExamResult';
@@ -26,6 +28,7 @@ const Exam: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
     const [lastWarningCount, setLastWarningCount] = useState(0);
     const [lastExtraMinutes, setLastExtraMinutes] = useState(0);
 
@@ -262,7 +265,6 @@ const Exam: React.FC = () => {
     }, [answers, phase, submissionId]);
 
     const submitExam = async () => {
-        if (!confirm("Are you sure you want to submit?")) return;
         setLoading(true);
         try {
             const answerArray = Object.entries(answers).map(([questionId, selectedAnswer]) => ({
@@ -271,12 +273,14 @@ const Exam: React.FC = () => {
             const result = await api.submitExam({ submissionId, answers: answerArray, autoSubmit: false });
             setScore(result);
             setPhase('result');
+            setShowSubmitConfirm(false);
             if (document.fullscreenElement) {
                 document.exitFullscreen?.().catch(() => { });
             }
             localStorage.removeItem(`exam_progress_${submissionId}`);
         } catch (err: any) {
             setError(err.message);
+            setShowSubmitConfirm(false);
         }
         setLoading(false);
     };
@@ -401,13 +405,50 @@ const Exam: React.FC = () => {
                     maxViolations={MAX_VIOLATIONS}
                     onNext={() => setCurrentQ(Math.min(questions.length - 1, currentQ + 1))}
                     onPrev={() => setCurrentQ(Math.max(0, currentQ - 1))}
-                    onSubmit={submitExam}
+                    onSubmit={() => setShowSubmitConfirm(true)}
                     loading={loading}
                     allQuestions={questions}
                     jumpToQuestion={setCurrentQ}
                     adminWarnings={warnings}
                     clearWarning={(id) => setWarnings(prev => prev.filter(w => w.id !== id))}
                 />
+
+                {/* Custom Submit Confirmation Modal */}
+                <AnimatePresence>
+                    {showSubmitConfirm && (
+                        <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="bg-[#121214] border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl"
+                            >
+                                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                                    <CheckCircle2 className="w-8 h-8 text-primary" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-center mb-2">Submit Exam?</h3>
+                                <p className="text-gray-400 text-center mb-8">
+                                    Are you sure you want to end your exam? You cannot change your answers after submission.
+                                </p>
+                                <div className="flex flex-col gap-3">
+                                    <button
+                                        onClick={submitExam}
+                                        disabled={loading}
+                                        className="w-full py-4 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                                    >
+                                        {loading ? 'Submitting...' : 'Yes, Submit Now'}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowSubmitConfirm(false)}
+                                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white font-bold rounded-xl transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
             </>
         );
     }

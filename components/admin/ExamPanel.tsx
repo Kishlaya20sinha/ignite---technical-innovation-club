@@ -9,7 +9,7 @@ export function ExamPanel() {
     const [activeExams, setActiveExams] = useState<any[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [view, setView] = useState<'questions' | 'submissions' | 'live' | 'allowlist' | 'settings'>('questions');
-    const [form, setForm] = useState({ question: '', options: ['', '', '', ''], correctAnswer: 0 as any, type: 'mcq', difficulty: 'medium' });
+    const [form, setForm] = useState({ question: '', options: ['', '', '', ''], correctAnswer: 0 as any, type: 'mcq', difficulty: 'medium', category: 'aptitude' });
     const [allowlistForm, setAllowlistForm] = useState({ name: '', email: '', rollNo: '' });
     const [allowlist, setAllowlist] = useState<any[]>([]);
     const [config, setConfig] = useState({ startTime: '', endTime: '' });
@@ -55,7 +55,7 @@ export function ExamPanel() {
                 await api.addQuestion(form);
             }
             setShowForm(false);
-            setForm({ question: '', options: ['', '', '', ''], correctAnswer: 0, type: 'mcq', difficulty: 'medium' });
+            setForm({ question: '', options: ['', '', '', ''], correctAnswer: 0, type: 'mcq', difficulty: 'medium', category: 'aptitude' });
             setEditId(null);
             load();
         } catch (err: any) { alert(err.message); }
@@ -67,7 +67,8 @@ export function ExamPanel() {
             options: q.options || ['', '', '', ''],
             correctAnswer: q.correctAnswer,
             type: (q.type || 'mcq').toLowerCase(), // Normalize
-            difficulty: q.difficulty || 'medium'
+            difficulty: q.difficulty || 'medium',
+            category: q.category || 'aptitude'
         });
         setEditId(q._id);
         setShowForm(true);
@@ -176,7 +177,8 @@ export function ExamPanel() {
                         question: cols[0],
                         options: [cols[1], cols[2], cols[3], cols[4]],
                         correctAnswer: parseInt(cols[5]) || 0,
-                        difficulty: cols[6]?.toLowerCase() || 'medium'
+                        difficulty: cols[6]?.toLowerCase() || 'medium',
+                        category: cols[7]?.toLowerCase() || 'aptitude'
                     };
                 }).filter(q => q !== null);
 
@@ -324,7 +326,7 @@ export function ExamPanel() {
                         <button onClick={handleGenerate} disabled={generating} className="flex items-center gap-1 px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50">
                             <Sparkles className="w-4 h-4" /> {generating ? 'Generating...' : 'AI Generate'}
                         </button>
-                        <button onClick={() => { setShowForm(!showForm); setEditId(null); setForm({ question: '', options: ['', '', '', ''], correctAnswer: 0, type: 'mcq', difficulty: 'medium' }); }} className="flex items-center gap-1 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark">
+                        <button onClick={() => { setShowForm(!showForm); setEditId(null); setForm({ question: '', options: ['', '', '', ''], correctAnswer: 0, type: 'mcq', difficulty: 'medium', category: 'aptitude' }); }} className="flex items-center gap-1 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark">
                             <Plus className="w-4 h-4" /> Add Manual
                         </button>
                     </div>
@@ -353,6 +355,10 @@ export function ExamPanel() {
                             <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} className={`${inputClass} w-auto bg-gray-900 text-white`}>
                                 <option value="mcq" className="bg-gray-900 text-white">Multiple Choice</option>
                                 <option value="input" className="bg-gray-900 text-white">Text Input</option>
+                            </select>
+                            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className={`${inputClass} w-auto bg-gray-900 text-white`}>
+                                <option value="aptitude" className="bg-gray-900 text-white">🧠 Aptitude</option>
+                                <option value="coding" className="bg-gray-900 text-white">💻 Coding</option>
                             </select>
                         </div>
                     </div>
@@ -392,26 +398,45 @@ export function ExamPanel() {
                         const easyCount = questions.filter((q: any) => q.difficulty === 'easy').length;
                         const medCount = questions.filter((q: any) => q.difficulty === 'medium').length;
                         const hardCount = questions.filter((q: any) => q.difficulty === 'hard').length;
+
+                        const codingCount = questions.filter((q: any) => q.category === 'coding').length;
+                        const aptiCount = questions.filter((q: any) => q.category === 'aptitude').length;
+
                         const minEasy = 5, minMed = 8, minHard = 7;
+                        const minCoding = 12, minApti = 8;
+
                         return (
                             <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl mb-2">
-                                <div className="flex items-center justify-between flex-wrap gap-3">
-                                    <span className="text-sm font-bold text-gray-300">Question Bank: <span className="text-primary">{questions.length}</span> total</span>
-                                    <div className="flex gap-3 text-xs font-bold">
-                                        <span className={`px-3 py-1.5 rounded-lg ${easyCount >= minEasy ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse'}`}>
-                                            🟢 Easy: {easyCount} {easyCount < minEasy && `(need ${minEasy})`}
-                                        </span>
-                                        <span className={`px-3 py-1.5 rounded-lg ${medCount >= minMed ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse'}`}>
-                                            🟡 Medium: {medCount} {medCount < minMed && `(need ${minMed})`}
-                                        </span>
-                                        <span className={`px-3 py-1.5 rounded-lg ${hardCount >= minHard ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse'}`}>
-                                            🔴 Hard: {hardCount} {hardCount < minHard && `(need ${minHard})`}
-                                        </span>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between flex-wrap gap-3">
+                                        <span className="text-sm font-bold text-gray-300">Question Bank: <span className="text-primary">{questions.length}</span> total</span>
+                                        <div className="flex gap-3 text-xs font-bold">
+                                            <span className={`px-3 py-1.5 rounded-lg ${easyCount >= minEasy ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse'}`}>
+                                                🟢 Easy: {easyCount} {easyCount < minEasy && `(need ${minEasy})`}
+                                            </span>
+                                            <span className={`px-3 py-1.5 rounded-lg ${medCount >= minMed ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse'}`}>
+                                                🟡 Medium: {medCount} {medCount < minMed && `(need ${minMed})`}
+                                            </span>
+                                            <span className={`px-3 py-1.5 rounded-lg ${hardCount >= minHard ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse'}`}>
+                                                🔴 Hard: {hardCount} {hardCount < minHard && `(need ${minHard})`}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-end flex-wrap gap-3 border-t border-white/5 pt-3">
+                                        <div className="flex gap-3 text-xs font-bold">
+                                            <span className={`px-3 py-1.5 rounded-lg ${codingCount >= minCoding ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse'}`}>
+                                                💻 Coding: {codingCount} {codingCount < minCoding && `(need ${minCoding})`}
+                                            </span>
+                                            <span className={`px-3 py-1.5 rounded-lg ${aptiCount >= minApti ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse'}`}>
+                                                🧠 Aptitude: {aptiCount} {aptiCount < minApti && `(need ${minApti})`}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                                {(easyCount < minEasy || medCount < minMed || hardCount < minHard) && (
+                                {(easyCount < minEasy || medCount < minMed || hardCount < minHard || codingCount < minCoding || aptiCount < minApti) && (
                                     <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
-                                        ⚠️ Insufficient questions for exam generation (need min 5 Easy + 8 Medium + 7 Hard = 20 per student)
+                                        ⚠️ Insufficient questions for exam generation (need min 12 Coding + 8 Aptitude with 5:8:7 difficulty ratio)
                                     </p>
                                 )}
                             </div>
@@ -427,6 +452,9 @@ export function ExamPanel() {
                                             q.difficulty === 'hard' ? 'bg-red-500/15 text-red-400 border border-red-500/20' :
                                                 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
                                             }`}>{q.difficulty || 'medium'}</span>
+                                        <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${q.category === 'coding' ? 'bg-purple-500/15 text-purple-400 border border-purple-500/20' : 'bg-blue-500/15 text-blue-400 border border-blue-500/20'}`}>
+                                            {q.category || 'aptitude'}
+                                        </span>
                                     </div>
                                     <div className="font-medium text-sm w-full">{renderQuestionText(q.question)}</div>
                                     {(q.type || 'mcq').toLowerCase() === 'mcq' && q.options && q.options.length > 0 ? (
@@ -489,7 +517,17 @@ export function ExamPanel() {
                                 <p className="text-gray-400 text-xs mb-3">{s.email}</p>
                                 <div className="flex gap-2 text-xs">
                                     <span className="bg-white/5 px-2 py-1 rounded">Roll: {s.rollNo}</span>
-                                    <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded">Violations: {s.violations}</span>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {s.violations > 0 ? (
+                                            s.violationLog?.map((v: any, idx: number) => (
+                                                <span key={idx} className="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[10px]" title={new Date(v.timestamp).toLocaleTimeString()}>
+                                                    {v.type}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="bg-green-500/10 text-green-400 px-2 py-1 rounded">Zero Violations</span>
+                                        )}
+                                    </div>
                                 </div>
                                 <p className="mt-3 text-xs text-gray-500">Started: {new Date(s.startedAt).toLocaleTimeString()}</p>
 
@@ -546,7 +584,17 @@ export function ExamPanel() {
                                             {s.status}
                                         </span>
                                     </td>
-                                    <td className="py-3">{s.violations > 0 ? <span className="text-yellow-400">{s.violations}</span> : <span className="text-gray-600">0</span>}</td>
+                                    <td className="py-3">
+                                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                            {s.violations > 0 ? (
+                                                Array.from(new Set(s.violationLog?.map((v: any) => v.type))).map((type: any, idx) => (
+                                                    <span key={idx} className="bg-red-500/10 text-red-400 text-[10px] px-1.5 py-0.5 rounded border border-red-500/20">
+                                                        {type} ({s.violationLog.filter((v: any) => v.type === type).length})
+                                                    </span>
+                                                ))
+                                            ) : '-'}
+                                        </div>
+                                    </td>
                                     <td className="py-3 text-xs text-gray-500">{s.submittedAt ? new Date(s.submittedAt).toLocaleString() : '-'}</td>
                                     <td className="py-3 text-right">
                                         <button onClick={() => handleResetSubmission(s._id, s.name)} className="text-gray-500 hover:text-red-400 transition-colors p-2 hover:bg-white/5 rounded-lg" title="Delete & Reset Submission">

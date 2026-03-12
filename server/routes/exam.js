@@ -76,6 +76,7 @@ router.post('/questions/generate', auth, async (req, res) => {
             type: q.type || 'mcq',
             correctAnswer: q.correctAnswer,
             difficulty: q.difficulty || 'medium',
+            category: q.category || 'coding',
             isActive: true
         })));
         
@@ -165,22 +166,37 @@ router.post('/start', async (req, res) => {
       return res.status(400).json({ error: 'You have already submitted the exam.' });
     }
 
-    // Distribution: 5 Easy, 8 Medium, 7 Hard (Total 20)
-    const easyQ = await ExamQuestion.find({ difficulty: 'easy', isActive: true }).lean();
-    const medQ = await ExamQuestion.find({ difficulty: 'medium', isActive: true }).lean();
-    const hardQ = await ExamQuestion.find({ difficulty: 'hard', isActive: true }).lean();
+    // Distribution: 12 Coding (60%), 8 Aptitude (40%)
+    // Sub-distribution by difficulty:
+    // Coding (12): 3 Easy, 5 Medium, 4 Hard
+    // Aptitude (8): 2 Easy, 3 Medium, 3 Hard
+    // Total (20): 5 Easy, 8 Medium, 7 Hard
 
-    if (easyQ.length < 5 || medQ.length < 8 || hardQ.length < 7) {
-        return res.status(500).json({ error: 'Insufficient questions in bank. Please contact admin.' });
+    const fetchRandom = async (query, count) => {
+        const pool = await ExamQuestion.find({ ...query, isActive: true }).lean();
+        if (pool.length < count) throw new Error(`Insufficient questions for query: ${JSON.stringify(query)}. Need ${count}, have ${pool.length}`);
+        return pool.sort(() => Math.random() - 0.5).slice(0, count);
+    };
+
+    let finalQuestions = [];
+    try {
+        const codingEasy = await fetchRandom({ category: 'coding', difficulty: 'easy' }, 3);
+        const codingMed = await fetchRandom({ category: 'coding', difficulty: 'medium' }, 5);
+        const codingHard = await fetchRandom({ category: 'coding', difficulty: 'hard' }, 4);
+        
+        const aptiEasy = await fetchRandom({ category: 'aptitude', difficulty: 'easy' }, 2);
+        const aptiMed = await fetchRandom({ category: 'aptitude', difficulty: 'medium' }, 3);
+        const aptiHard = await fetchRandom({ category: 'aptitude', difficulty: 'hard' }, 3);
+
+        finalQuestions = [
+            ...codingEasy, ...codingMed, ...codingHard,
+            ...aptiEasy, ...aptiMed, ...aptiHard
+        ].sort(() => Math.random() - 0.5);
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
     }
 
     const shuffle = (array) => array.sort(() => Math.random() - 0.5);
-
-    const pickedEasy = shuffle(easyQ).slice(0, 5);
-    const pickedMed = shuffle(medQ).slice(0, 8);
-    const pickedHard = shuffle(hardQ).slice(0, 7);
-
-    let finalQuestions = shuffle([...pickedEasy, ...pickedMed, ...pickedHard]);
 
     // Anti-Neighbor: Shuffle options within each question
     finalQuestions = finalQuestions.map(q => {
@@ -194,6 +210,7 @@ router.post('/start', async (req, res) => {
             ...q,
             options: shuffled.map(s => s.opt),
             correctAnswer: newCorrectIdx, // Save this for grading
+            category: q.category || 'aptitude',
             difficulty: q.difficulty || 'medium' // Preserve difficulty in snapshot
         };
     });
@@ -495,6 +512,7 @@ router.post('/questions/bulk', auth, async (req, res) => {
       options: q.options,
       correctAnswer: q.correctAnswer,
       difficulty: q.difficulty || 'medium',
+      category: q.category || 'aptitude',
       type: 'mcq',
       isActive: true
     }));
