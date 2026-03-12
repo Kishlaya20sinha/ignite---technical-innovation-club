@@ -254,19 +254,37 @@ const Exam: React.FC = () => {
         setLoading(false);
     };
 
-    // Sync answers to server periodically (for Force Submit accuracy)
+    const syncAnswers = useCallback(async () => {
+        if (!submissionId || phase !== 'exam') return;
+        try {
+            const answerArray = Object.entries(answers).map(([questionId, selectedAnswer]) => ({
+                questionId, selectedAnswer,
+            }));
+            await api.syncAnswers({ submissionId, answers: answerArray });
+        } catch (e) { }
+    }, [answers, submissionId, phase]);
+
+    // Sync answers to server periodically
     useEffect(() => {
         if (phase !== 'exam' || !submissionId) return;
-        const interval = setInterval(async () => {
-            try {
-                const answerArray = Object.entries(answers).map(([questionId, selectedAnswer]) => ({
-                    questionId, selectedAnswer,
-                }));
-                await api.syncAnswers({ submissionId, answers: answerArray });
-            } catch (e) { /* background sync, ignore errors */ }
-        }, 45000); // Sync every 45s
+        const interval = setInterval(syncAnswers, 20000); // Sync every 20s
         return () => clearInterval(interval);
-    }, [answers, phase, submissionId]);
+    }, [syncAnswers, phase, submissionId]);
+
+    const handleNext = () => {
+        setCurrentQ(prev => Math.min(questions.length - 1, prev + 1));
+        syncAnswers();
+    };
+
+    const handlePrev = () => {
+        setCurrentQ(prev => Math.max(0, prev - 1));
+        syncAnswers();
+    };
+
+    const handleJump = (idx: number) => {
+        setCurrentQ(idx);
+        syncAnswers();
+    };
 
     const submitExam = async () => {
         setLoading(true);
@@ -407,12 +425,12 @@ const Exam: React.FC = () => {
                     timeLeft={timeLeft}
                     violations={violations}
                     maxViolations={MAX_VIOLATIONS}
-                    onNext={() => setCurrentQ(Math.min(questions.length - 1, currentQ + 1))}
-                    onPrev={() => setCurrentQ(Math.max(0, currentQ - 1))}
+                    onNext={handleNext}
+                    onPrev={handlePrev}
                     onSubmit={() => setShowSubmitConfirm(true)}
                     loading={loading}
                     allQuestions={questions}
-                    jumpToQuestion={setCurrentQ}
+                    jumpToQuestion={handleJump}
                     adminWarnings={warnings}
                     clearWarning={(id) => setWarnings(prev => prev.filter(w => w.id !== id))}
                 />
