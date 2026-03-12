@@ -17,22 +17,34 @@ export function ExamPanel() {
 
     const [editId, setEditId] = useState<string | null>(null);
 
-    const load = async () => {
+    const load = async (isPoll = false) => {
         try {
             setQuestions(await api.getAllQuestions());
             setSubmissions(await api.getSubmissions());
             try { setAllowlist(await api.getAllowlist()); } catch { }
-            try {
-                const cfg = await api.getExamConfig();
-                // Format for datetime-local input (YYYY-MM-DDThh:mm)
-                const fmt = (d: any) => d ? new Date(d).toISOString().slice(0, 16) : '';
-                setConfig({ startTime: fmt(cfg.startTime), endTime: fmt(cfg.endTime) });
-            } catch { }
+
+            // Only load config once or when explicitly requested, not on poll
+            if (!isPoll) {
+                try {
+                    const cfg = await api.getExamConfig();
+                    // Just use the string directly if it exists, avoid timezone shift
+                    setConfig({
+                        startTime: cfg.startTime || '',
+                        endTime: cfg.endTime || ''
+                    });
+                } catch { }
+            }
+
             // catch errors for active exams in case route isn't ready
             try { setActiveExams(await api.getActiveExams()); } catch { }
         } catch { }
     };
-    useEffect(() => { load(); const i = setInterval(load, 5000); return () => clearInterval(i); }, []);
+
+    useEffect(() => {
+        load();
+        const i = setInterval(() => load(true), 5000);
+        return () => clearInterval(i);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

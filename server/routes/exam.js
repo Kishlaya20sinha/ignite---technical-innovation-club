@@ -135,6 +135,20 @@ router.post('/start', async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
+    // 0. Check Exam Window
+    try {
+        const startTimeCfg = await SystemConfig.findOne({ key: 'exam_start' });
+        const endTimeCfg = await SystemConfig.findOne({ key: 'exam_end' });
+        const now = new Date();
+
+        if (startTimeCfg?.value && new Date(startTimeCfg.value) > now) {
+            return res.status(403).json({ error: `Exam has not started yet. It begins at ${new Date(startTimeCfg.value).toLocaleString()}` });
+        }
+        if (endTimeCfg?.value && new Date(endTimeCfg.value) < now) {
+            return res.status(403).json({ error: 'The exam window has closed.' });
+        }
+    } catch (e) { console.error("Config check failed", e); }
+
     // 1. Check if user applied for recruitment or is in allowlist
     let candidate = await Recruitment.findOne({ email: normalizedEmail });
     if (!candidate) candidate = await ExamAllowlist.findOne({ email: normalizedEmail });
