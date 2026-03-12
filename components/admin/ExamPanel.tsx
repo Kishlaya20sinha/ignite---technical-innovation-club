@@ -514,7 +514,23 @@ export function ExamPanel() {
                                     <Clock className="w-12 h-12 text-green-500 animate-pulse" />
                                 </div>
                                 <h3 className="font-bold text-lg mb-1">{s.name}</h3>
-                                <p className="text-gray-400 text-xs mb-3">{s.email}</p>
+                                <p className="text-gray-400 text-xs mb-1">{s.email}</p>
+
+                                {/* Progress Bar */}
+                                <div className="mb-3 mt-2">
+                                    <div className="flex justify-between text-[10px] text-gray-500 mb-1 font-mono uppercase tracking-wider">
+                                        <span>Progress</span>
+                                        <span>{(s.answers?.length || 0)} / {s.totalQuestions || 20}</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${Math.min(100, ((s.answers?.length || 0) / (s.totalQuestions || 20)) * 100)}%` }}
+                                            className="h-full bg-primary"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="flex gap-2 text-xs">
                                     <span className="bg-white/5 px-2 py-1 rounded">Roll: {s.rollNo}</span>
                                     <div className="flex flex-wrap gap-1 mt-1">

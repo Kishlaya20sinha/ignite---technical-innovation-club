@@ -354,7 +354,7 @@ router.post('/violation', async (req, res) => {
 router.get('/active', auth, async (req, res) => {
   try {
     const active = await ExamSubmission.find({ status: 'in-progress' })
-      .select('name email rollNo startedAt violations violationLog adminWarnings score')
+      .select('name email rollNo startedAt violations violationLog adminWarnings score answers totalQuestions')
       .sort({ startedAt: -1 });
     res.json(active);
   } catch (err) {
@@ -535,14 +535,47 @@ router.get('/export', auth, async (req, res) => {
   try {
     const submissions = await ExamSubmission.find().sort({ score: -1, submittedAt: 1 }).lean();
     
-    // Create CSV Header
-    let csv = 'Rank,Name,Email,Roll No,Score,Total,Status,Violations,Date,Time\n';
+    // Find the max number of questions across all submissions to create headers
+    const maxQs = Math.max(...submissions.map(s => s.questionSnapshot?.length || 0), 0);
+    
+    let header = 'Rank,Name,Email,Roll No,Score,Total,Status,Violations,Started At,Submitted At';
+    for(let i=1; i<=maxQs; i++) {
+        header += `,Q${i} Question,Q${i} Answer`;
+    }
+    header += '\n';
+
+    let csv = header;
     
     submissions.forEach((s, i) => {
-      const date = s.submittedAt ? new Date(s.submittedAt) : null;
-      const dateStr = date ? date.toLocaleDateString() : 'N/A';
-      const timeStr = date ? date.toLocaleTimeString() : 'N/A';
-      csv += `${i + 1},"${s.name}","${s.email}","${s.rollNo}",${s.score},${s.totalQuestions},"${s.status}",${s.violations},"${dateStr}","${timeStr}"\n`;
+      const start = s.startedAt ? new Date(s.startedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A';
+      const end = s.submittedAt ? new Date(s.submittedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A';
+      
+      let row = `${i + 1},"${s.name}","${s.email}","${s.rollNo}",${s.score},${s.totalQuestions},"${s.status}",${s.violations},"${start}","${end}"`;
+      
+      const snapshot = s.questionSnapshot || [];
+      const answers = s.answers || [];
+      
+      for(let j=0; j<maxQs; j++) {
+          if (j < snapshot.length) {
+              const q = snapshot[j];
+              const ansObj = answers.find(a => String(a.questionId) === String(q._id));
+              let userAns = 'Unanswered';
+              if (ansObj) {
+                  if (q.type === 'mcq') {
+                      userAns = q.options[ansObj.selectedAnswer] || `Index ${ansObj.selectedAnswer}`;
+                  } else {
+                      userAns = ansObj.selectedAnswer;
+                  }
+              }
+              // Escape quotes in question and answer
+              const cleanQ = String(q.question).replace(/"/g, '""');
+              const cleanA = String(userAns).replace(/"/g, '""');
+              row += `,"${cleanQ}","${cleanA}"`;
+          } else {
+              row += ',"",""';
+          }
+      }
+      csv += row + '\n';
     });
 
     res.setHeader('Content-Type', 'text/csv');
