@@ -142,8 +142,8 @@ router.post('/start', async (req, res) => {
         const endTimeCfg = await SystemConfig.findOne({ key: 'exam_end' });
         
         // datetime-local inputs send strings like '2026-03-12T18:00'
-        // We need to parse these as local time to match what the admin saw
-        const parseLocal = (s) => s ? new Date(s) : null;
+        // We append +05:30 to force IST interpretation on the server (Render/UTC)
+        const parseLocal = (s) => s ? new Date(s + "+05:30") : null;
         const start = parseLocal(startTimeCfg?.value);
         const end = parseLocal(endTimeCfg?.value);
         const now = new Date();
